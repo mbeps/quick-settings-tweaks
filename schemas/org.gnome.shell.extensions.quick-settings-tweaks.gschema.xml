@@ -13,36 +13,6 @@
     </key>
     <!-- #endregion Debug -->
 
-    <!-- #region Notifications Widget -->
-    <key name="notifications-enabled" type="b">
-      <default>true</default>
-    </key>
-    <key name="notifications-show-header" type="b">
-      <default>true</default>
-    </key>
-    <key name="notifications-use-native-controls" type="b">
-      <default>false</default>
-    </key>
-    <key name="notifications-compact" type="b">
-      <default>true</default>
-    </key>
-    <key name="notifications-autohide" type="b">
-      <default>true</default>
-    </key>
-    <key name="notifications-max-height" type="i">
-      <default>292</default>
-    </key>
-    <key name="notifications-fade-offset" type="i">
-      <default>46</default>
-    </key>
-    <key name="notifications-remove-shadow" type="b">
-      <default>true</default>
-    </key>
-    <key name="notifications-show-scrollbar" type="b">
-      <default>true</default>
-    </key>
-    <!-- #endregion Notifications Widget -->
-
     <!-- #region Media Widget -->
     <key name="media-enabled" type="b">
       <default>true</default>
@@ -462,7 +432,6 @@
       <default>
         {
           'weather-widget': [0, 0],
-          'notifications-widget': [0, 0],
           'media-widget': [0, 0],
           'mixer-widget': [0, 0]
         }

@@ -15,7 +15,6 @@ import { MenuAnimation } from "./features/menuAnimation.js";
 import { OverlayMenu } from "./features/overlayMenu.js";
 import { UnsafeQuickToggleFeature } from "./features/toggle/unsafeQuickToggle.js";
 import { MediaWidgetFeature } from "./features/widget/media.js";
-import { NotificationsWidgetFeature } from "./features/widget/notifications.js";
 import { VolumeMixerWidgetFeature } from "./features/widget/volumeMixer.js";
 import { WeatherWidgetFeature } from "./features/widget/weather.js";
 import Global from "./global.js";
@@ -55,7 +54,6 @@ export default class QstExtension extends Extension {
 		this.features = [
 			new UnsafeQuickToggleFeature(),
 			// new InputOutputFeature(),
-			new NotificationsWidgetFeature(),
 			new MediaWidgetFeature(),
 			new VolumeMixerWidgetFeature(),
 			new DateMenuLayoutFeature(),
