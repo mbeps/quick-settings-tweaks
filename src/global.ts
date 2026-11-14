@@ -1,179 +1,197 @@
-import Clutter from "gi://Clutter"
-import St from "gi://St"
-import GLib from "gi://GLib"
-import Gio from "gi://Gio"
-import * as Main from "resource:///org/gnome/shell/ui/main.js"
-import { type Extension } from "resource:///org/gnome/shell/extensions/extension.js"
-import { type MessageTray } from "resource:///org/gnome/shell/ui/messageTray.js"
-import { type DateMenuButton } from "resource:///org/gnome/shell/ui/dateMenu.js"
-import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js"
-import {
-	type CalendarMessageList
-} from "resource:///org/gnome/shell/ui/calendar.js";
-import {
-	type SystemItem,
-	type Indicator as SystemIndicator
-} from "resource:///org/gnome/shell/ui/status/system.js"
-import { type PopupMenu } from "resource:///org/gnome/shell/ui/popupMenu.js"
-import { type QuickSlider, type QuickSettingsMenu } from "resource:///org/gnome/shell/ui/quickSettings.js"
-import Logger from "./libs/shared/logger.js"
+import type Clutter from "gi://Clutter";
+import Gio from "gi://Gio";
+import GLib from "gi://GLib";
+import type St from "gi://St";
+import type { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
+import type { CalendarMessageList } from "resource:///org/gnome/shell/ui/calendar.js";
+import type { DateMenuButton } from "resource:///org/gnome/shell/ui/dateMenu.js";
+import * as Main from "resource:///org/gnome/shell/ui/main.js";
+import type { MessageTray } from "resource:///org/gnome/shell/ui/messageTray.js";
+import type * as Panel from "resource:///org/gnome/shell/ui/panel.js";
+import type { PopupMenu } from "resource:///org/gnome/shell/ui/popupMenu.js";
+import type {
+	QuickSettingsMenu,
+	QuickSlider,
+} from "resource:///org/gnome/shell/ui/quickSettings.js";
+import type {
+	Indicator as SystemIndicator,
+	SystemItem,
+} from "resource:///org/gnome/shell/ui/status/system.js";
+import type * as VolumeStatus from "resource:///org/gnome/shell/ui/status/volume.js";
+import Logger from "./libs/shared/logger.js";
 
 type StreamSlider = {
-	VolumeInput: any,
-	InputStreamSlider: QuickSlider,
-	OutputStreamSlider: QuickSlider,
+	VolumeInput: VolumeStatus.InputIndicator;
+	InputStreamSlider: QuickSlider;
+	OutputStreamSlider: QuickSlider;
+};
+
+type DateMenuWithIndicator = DateMenuButton & {
+	_indicator: Clutter.Actor;
+};
+
+let DBusFiles: Map<string, Gio.DBusNodeInfo> = null;
+let Decoder: TextDecoder = null;
+let Shaders: Map<string, [string, string]> = null;
+
+function StreamSliderGetter(): StreamSlider | null {
+	if (!Global.QuickSettings._volumeInput) return null;
+	return {
+		VolumeInput: Global.QuickSettings._volumeInput,
+		InputStreamSlider: Global.QuickSettings._volumeInput._input,
+		OutputStreamSlider: Global.QuickSettings._volumeOutput._output,
+	};
 }
-export default class Global {
-	static QuickSettings: PanelMenu.Button
-	static QuickSettingsMenu: QuickSettingsMenu
-	static QuickSettingsGrid: St.Widget
-	static QuickSettingsBox: St.BoxLayout
-	static QuickSettingsActor: St.Widget
-	static get QuickSettingsSystemIndicator(): Promise<SystemIndicator> {
-		return new Promise(resolve => {
-			let system = (this.QuickSettings as any)._system
+
+const Global = {
+	QuickSettings: null as Panel.QuickSettings,
+	QuickSettingsMenu: null as QuickSettingsMenu,
+	QuickSettingsGrid: null as St.Widget,
+	QuickSettingsBox: null as St.BoxLayout,
+	QuickSettingsActor: null as St.Widget,
+	get QuickSettingsSystemIndicator(): Promise<SystemIndicator> {
+		return new Promise((resolve) => {
+			let system = Global.QuickSettings._system;
 			if (system) {
-				resolve(system)
-				return
+				resolve(system);
+				return;
 			}
 			GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-				system = (this.QuickSettings as any)._system
-				if (!system) return GLib.SOURCE_CONTINUE
-				resolve(system)
-				return GLib.SOURCE_REMOVE
-			})
-		})
-	}
-	static get QuickSettingsSystemItem(): Promise<SystemItem> {
-		return this.QuickSettingsSystemIndicator
-			.then(system=>(system as any)._systemItem)
-			.catch(Logger.error)
-	}
-	static Indicators: St.BoxLayout
+				system = Global.QuickSettings._system;
+				if (!system) return GLib.SOURCE_CONTINUE;
+				resolve(system);
+				return GLib.SOURCE_REMOVE;
+			});
+		});
+	},
+	get QuickSettingsSystemItem(): Promise<SystemItem> {
+		return Global.QuickSettingsSystemIndicator.then(
+			(system) => system._systemItem,
+		).catch(Logger.error) as Promise<SystemItem>;
+	},
+	Indicators: null as St.BoxLayout,
 
-	static DateMenu: DateMenuButton
-	static DateMenuMenu: PopupMenu
-	static DateMenuBox: Clutter.Actor
-	static DateMenuHolder: Clutter.Actor
+	DateMenu: null as DateMenuButton,
+	DateMenuMenu: null as PopupMenu,
+	DateMenuBox: null as Clutter.Actor,
+	DateMenuHolder: null as Clutter.Actor,
 
-	static MessageTray: MessageTray
+	MessageTray: null as MessageTray,
 
-	static Extension: Extension
-	static Settings: Gio.Settings
+	Extension: null as Extension,
+	Settings: null as Gio.Settings,
 
-	static get MessageList(): CalendarMessageList {
-		return (this.DateMenu as any)._messageList
-	}
-	static get DateMenuIndicator(): Clutter.Actor {
-		return (this.DateMenu as any)._indicator
-	}
+	get MessageList(): CalendarMessageList {
+		return Global.DateMenu._messageList;
+	},
+	get DateMenuIndicator(): Clutter.Actor {
+		return (Global.DateMenu as DateMenuWithIndicator)._indicator;
+	},
 
-	static GetShutdownMenuBox(): Promise<Clutter.Actor> {
+	GetShutdownMenuBox(): Promise<Clutter.Actor> {
 		// To prevent freeze, priority should be PRIORITY_DEFAULT_IDLE instead of PRIORITY_DEFAULT
-		return new Promise(resolve => {
+		return new Promise((resolve) => {
 			GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-				if (!(this.QuickSettings as any)._system)
-					return GLib.SOURCE_CONTINUE
-				resolve((this.QuickSettings as any)._system._systemItem.menu.box)
-				return GLib.SOURCE_REMOVE
-			})
-		})
-	}
+				if (!Global.QuickSettings._system) return GLib.SOURCE_CONTINUE;
+				resolve(Global.QuickSettings._system._systemItem.menu.box);
+				return GLib.SOURCE_REMOVE;
+			});
+		});
+	},
 
-	private static StreamSliderGetter(): StreamSlider|null {
-		if (!(this.QuickSettings as any)._volumeInput)
-			return null
-		return {
-			VolumeInput: (this.QuickSettings as any)._volumeInput,
-			InputStreamSlider: (this.QuickSettings as any)._volumeInput._input,
-			OutputStreamSlider: (this.QuickSettings as any)._volumeOutput._output,
-		}
-	}
-	static GetStreamSlider(): Promise<StreamSlider> {
-		return new Promise(resolve => {
-			let streamSlider = this.StreamSliderGetter()
+	GetStreamSlider(): Promise<StreamSlider> {
+		return new Promise((resolve) => {
+			let streamSlider = StreamSliderGetter();
 			if (streamSlider) {
-				resolve(streamSlider)
-				return
+				resolve(streamSlider);
+				return;
 			}
 			GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-				streamSlider = this.StreamSliderGetter()
-				if (!streamSlider) return GLib.SOURCE_CONTINUE
-				resolve(streamSlider)
-				return GLib.SOURCE_REMOVE
-			})
-		})
-	}
+				streamSlider = StreamSliderGetter();
+				if (!streamSlider) return GLib.SOURCE_CONTINUE;
+				resolve(streamSlider);
+				return GLib.SOURCE_REMOVE;
+			});
+		});
+	},
 
-	private static DBusFiles: Map<string, Gio.DBusNodeInfo>
-	private static Decoder: TextDecoder
-	static GetDbusInterface(path: string, interfaceName: string) {
-		let cachedInfo = this.DBusFiles.get(path)
+	GetDbusInterface(path: string, interfaceName: string) {
+		let cachedInfo = DBusFiles.get(path);
 		if (!cachedInfo) {
-			const DbusFile = Gio.File.new_for_path(`${this.Extension.path}/${path}`)
-			cachedInfo = Gio.DBusNodeInfo.new_for_xml(this.Decoder.decode(DbusFile.load_contents(null)[1]))
-			this.DBusFiles.set(path, cachedInfo)
+			const DbusFile = Gio.File.new_for_path(
+				`${Global.Extension.path}/${path}`,
+			);
+			cachedInfo = Gio.DBusNodeInfo.new_for_xml(
+				Decoder.decode(DbusFile.load_contents(null)[1]),
+			);
+			DBusFiles.set(path, cachedInfo);
 		}
-		return cachedInfo.lookup_interface(interfaceName)
-	}
+		return cachedInfo.lookup_interface(interfaceName);
+	},
 
-	private static Shaders: Map<string, [string, string]>
-	static GetShader(path: string): [string, string] {
-		let cachedInfo = this.Shaders.get(path)
+	GetShader(path: string): [string, string] {
+		let cachedInfo = Shaders.get(path);
 		if (!cachedInfo) {
-			const shaderFile = Gio.File.new_for_path(`${this.Extension.path}/${path}`)
-			const [declarations, main] = this.Decoder.decode(shaderFile.load_contents(null)[1]).split(
-				/^.*?main\(\s?\)\s?/m
-			) as [string, string]
+			const shaderFile = Gio.File.new_for_path(
+				`${Global.Extension.path}/${path}`,
+			);
+			const [declarations, main] = Decoder.decode(
+				shaderFile.load_contents(null)[1],
+			).split(/^.*?main\(\s?\)\s?/m) as [string, string];
 			cachedInfo = [
 				declarations.trim(),
-				main.trim().replace(/^[{}]/gm, '').trim()
-			]
-			this.Shaders.set(path, cachedInfo)
+				main.trim().replace(/^[{}]/gm, "").trim(),
+			];
+			Shaders.set(path, cachedInfo);
 		}
-		return cachedInfo
-	}
+		return cachedInfo;
+	},
 
-	static unload() {
-		this.QuickSettings = null
-		this.QuickSettingsMenu = null
-		this.QuickSettingsGrid = null
-		this.QuickSettingsBox = null
-		this.QuickSettingsActor = null
-		this.Indicators = null
-		this.DateMenu = null
-		this.DateMenuMenu = null
-		this.DateMenuBox = null
-		this.DateMenuHolder = null
-		this.MessageTray = null
-		this.Extension = null
-		this.Settings = null
-		this.DBusFiles = null
-		this.Shaders = null
-		this.Decoder = null
-	}
-	static load(extension: Extension) {
-		this.Extension = extension
-		this.Settings = extension.getSettings()
-		this.Shaders = new Map()
-		this.DBusFiles = new Map()
-		this.Decoder = new TextDecoder("utf-8")
+	unload() {
+		Global.QuickSettings = null;
+		Global.QuickSettingsMenu = null;
+		Global.QuickSettingsGrid = null;
+		Global.QuickSettingsBox = null;
+		Global.QuickSettingsActor = null;
+		Global.Indicators = null;
+		Global.DateMenu = null;
+		Global.DateMenuMenu = null;
+		Global.DateMenuBox = null;
+		Global.DateMenuHolder = null;
+		Global.MessageTray = null;
+		Global.Extension = null;
+		Global.Settings = null;
+		DBusFiles = null;
+		Shaders = null;
+		Decoder = null;
+	},
+	load(extension: Extension) {
+		Global.Extension = extension;
+		Global.Settings = extension.getSettings();
+		Shaders = new Map();
+		DBusFiles = new Map();
+		Decoder = new TextDecoder("utf-8");
 
 		// Quick Settings Items
-		const QuickSettings = this.QuickSettings = Main.panel.statusArea.quickSettings
-		this.QuickSettingsMenu = QuickSettings.menu
-		this.QuickSettingsGrid = QuickSettings.menu._grid
-		this.QuickSettingsBox = QuickSettings.menu.box
-		this.QuickSettingsActor = QuickSettings.menu.actor
-		this.Indicators = QuickSettings._indicators
+		const QuickSettings = Main.panel.statusArea.quickSettings;
+		Global.QuickSettings = QuickSettings;
+		Global.QuickSettingsMenu = QuickSettings.menu;
+		Global.QuickSettingsGrid = QuickSettings.menu._grid;
+		Global.QuickSettingsBox = QuickSettings.menu.box;
+		Global.QuickSettingsActor = QuickSettings.menu.actor;
+		Global.Indicators = QuickSettings._indicators;
 
 		// Date Menu
-		const DateMenu = this.DateMenu = Main.panel.statusArea.dateMenu
-		const DateMenuMenu = this.DateMenuMenu = DateMenu.menu as any
-		this.DateMenuBox = DateMenuMenu.box
-		this.DateMenuHolder = DateMenuMenu.box.first_child.first_child
+		const DateMenu = Main.panel.statusArea.dateMenu;
+		Global.DateMenu = DateMenu;
+		const DateMenuMenu = DateMenu.menu as PopupMenu;
+		Global.DateMenuMenu = DateMenuMenu;
+		Global.DateMenuBox = DateMenuMenu.box;
+		Global.DateMenuHolder = DateMenuMenu.box.first_child.first_child;
 
 		// Message
-		this.MessageTray = Main.messageTray
-	}
-}
+		Global.MessageTray = Main.messageTray;
+	},
+};
+
+export default Global;

@@ -4,3 +4,7 @@ i
 host/
 docker-compose.yml
 node_modules/
+
+AGENTS.md
+.agents/**
+graphify-out/
