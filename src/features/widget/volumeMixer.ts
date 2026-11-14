@@ -14,6 +14,7 @@ import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import { QuickSlider } from "resource:///org/gnome/shell/ui/quickSettings.js";
 import * as Volume from "resource:///org/gnome/shell/ui/status/volume.js";
+import Config from "../../config.js";
 import Global from "../../global.js";
 import Logger from "../../libs/shared/logger.js";
 import Maid from "../../libs/shared/maid.js";
@@ -248,6 +249,7 @@ class StreamSlider extends QuickSlider {
 }
 GObject.registerClass(
 	{
+		GTypeName: `${Config.baseGTypeName}StreamSlider`,
 		Signals: {
 			"stream-updated": {},
 		},
@@ -339,7 +341,10 @@ class VolumeMixerItem extends St.BoxLayout {
 		this._slider._sync();
 	}
 }
-GObject.registerClass(VolumeMixerItem);
+GObject.registerClass(
+	{ GTypeName: `${Config.baseGTypeName}VolumeMixerItem` },
+	VolumeMixerItem,
+);
 namespace VolumeMixerItem {
 	export type Options = {
 		labelText: "title" | "description" | "both" | "none";
@@ -478,6 +483,7 @@ class VolumeMixerList extends St.BoxLayout {
 }
 GObject.registerClass(
 	{
+		GTypeName: `${Config.baseGTypeName}VolumeMixerList`,
 		Properties: {
 			"should-show": GObject.ParamSpec.boolean(
 				"should-show",
@@ -581,7 +587,10 @@ class VolumeMixerWidget extends St.BoxLayout {
 		this.visible = this._list.shouldShow;
 	}
 }
-GObject.registerClass(VolumeMixerWidget);
+GObject.registerClass(
+	{ GTypeName: `${Config.baseGTypeName}VolumeMixerWidget` },
+	VolumeMixerWidget,
+);
 namespace VolumeMixerWidget {
 	export type Options = {
 		maxHeight: number;

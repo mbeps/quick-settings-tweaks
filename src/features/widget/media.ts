@@ -12,6 +12,7 @@ import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as MessageList from "resource:///org/gnome/shell/ui/messageList.js";
 import { PageIndicators } from "resource:///org/gnome/shell/ui/pageIndicators.js";
 import { Slider } from "resource:///org/gnome/shell/ui/slider.js";
+import Config from "../../config.js";
 import Global from "../../global.js";
 import type { Rgb } from "../../libs/shared/colors.js";
 import { getImageMeanColor } from "../../libs/shared/imageUtils.js";
@@ -280,6 +281,7 @@ class Player extends GObject.Object {
 }
 GObject.registerClass(
 	{
+		GTypeName: `${Config.baseGTypeName}MediaPlayer`,
 		Properties: {
 			"can-play": GObject.ParamSpec.boolean(
 				"can-play",
@@ -380,6 +382,7 @@ class Source extends GObject.Object {
 }
 GObject.registerClass(
 	{
+		GTypeName: `${Config.baseGTypeName}MediaSource`,
 		Signals: {
 			"player-added": { param_types: [Player] },
 			"player-removed": { param_types: [Player] },
@@ -582,7 +585,10 @@ class ProgressControl extends St.BoxLayout {
 		return `${minutes}:${secondsPadded}`;
 	}
 }
-GObject.registerClass(ProgressControl);
+GObject.registerClass(
+	{ GTypeName: `${Config.baseGTypeName}ProgressControl` },
+	ProgressControl,
+);
 namespace ProgressControl {
 	export interface OptionsBase {
 		sliderStyle: StyledSlider.Options;
@@ -788,7 +794,10 @@ class MediaItem extends MessageList.Message {
 		return actor;
 	}
 }
-GObject.registerClass(MediaItem);
+GObject.registerClass(
+	{ GTypeName: `${Config.baseGTypeName}MediaItem` },
+	MediaItem,
+);
 namespace MediaItem {
 	export interface OptionsBase {
 		progressEnabled: boolean;
@@ -1139,6 +1148,7 @@ Drag.applyTo(MediaList);
 Scroll.applyTo(MediaList);
 GObject.registerClass(
 	{
+		GTypeName: `${Config.baseGTypeName}MediaList`,
 		Signals: {
 			"page-updated": { param_types: [GObject.TYPE_INT] },
 			"max-page-updated": { param_types: [GObject.TYPE_INT] },
@@ -1219,6 +1229,7 @@ class Header extends St.BoxLayout {
 }
 GObject.registerClass(
 	{
+		GTypeName: `${Config.baseGTypeName}MediaHeader`,
 		Signals: {
 			"page-activated": { param_types: [GObject.TYPE_INT] },
 		},
@@ -1301,7 +1312,10 @@ class MediaWidget extends St.BoxLayout {
 		this.style_class = style;
 	}
 }
-GObject.registerClass(MediaWidget);
+GObject.registerClass(
+	{ GTypeName: `${Config.baseGTypeName}MediaWidget` },
+	MediaWidget,
+);
 namespace MediaWidget {
 	export type Options = Partial<
 		{
