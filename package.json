@@ -17,6 +17,7 @@
     { "name": "Skartorion De Pier", "url": "https://github.com/Skartorion" }
   ],
   "type": "module",
+  "packageManager": "pnpm@12.15.0",
   "sideEffects": false,
   "license": "LGPL-3.0-or-later",
   "homepage": "https://github.com/mbeps/quick-settings-tweaks#readme",
