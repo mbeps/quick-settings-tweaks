@@ -1,40 +1,77 @@
 {
-  "name": "quick-settings-tweaks",
-  "description": "GNOME Shell extension to tweak the Quick Settings menu",
-  "version": "0.0.0",
-  "author": {
-    "name": "Maruf Bepary",
-    "email": "maruf.h.bepary@gmail.com",
-    "url": "https://github.com/mbeps"
-  },
-  "contributors": [
-    { "name": "qwreey (original author)", "email": "me@qwreey.moe", "url": "https://github.com/qwreey" },
-    { "name": "John Stockdale (fork maintainer)", "url": "https://github.com/jstockdale" },
-    { "name": "Tymoteusz Lango", "url": "https://github.com/tymek805" },
-    { "name": "Giuseppe Carboni", "url": "https://github.com/giuseppe-carboni" },
-    { "name": "sfnemis", "url": "https://github.com/sfnemis" },
-    { "name": "nixxo", "url": "https://github.com/nixxo" },
-    { "name": "Skartorion De Pier", "url": "https://github.com/Skartorion" }
-  ],
-  "type": "module",
-  "packageManager": "pnpm@12.15.0",
-  "sideEffects": false,
-  "license": "LGPL-3.0-or-later",
-  "homepage": "https://github.com/mbeps/quick-settings-tweaks#readme",
-  "private": true,
-  "bugs": {
-    "url": "https://github.com/mbeps/quick-settings-tweaks/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mbeps/quick-settings-tweaks.git"
-  },
-  "devDependencies": {
-    "sass": "^1.83.4",
-    "typescript": "^5.7.3"
-  },
-  "dependencies": {
-    "@girs/gjs": "^4.0.0-beta.38",
-    "@girs/gnome-shell": "^49.1.0"
-  }
+	"name": "quick-settings-tweaks",
+	"description": "GNOME Shell extension to tweak the Quick Settings menu",
+	"version": "0.0.0",
+	"author": {
+		"name": "Maruf Bepary",
+		"email": "maruf.h.bepary@gmail.com",
+		"url": "https://github.com/mbeps"
+	},
+	"contributors": [
+		{
+			"name": "qwreey (original author)",
+			"email": "me@qwreey.moe",
+			"url": "https://github.com/qwreey"
+		},
+		{
+			"name": "John Stockdale (fork maintainer)",
+			"url": "https://github.com/jstockdale"
+		},
+		{
+			"name": "Tymoteusz Lango",
+			"url": "https://github.com/tymek805"
+		},
+		{
+			"name": "Giuseppe Carboni",
+			"url": "https://github.com/giuseppe-carboni"
+		},
+		{
+			"name": "sfnemis",
+			"url": "https://github.com/sfnemis"
+		},
+		{
+			"name": "nixxo",
+			"url": "https://github.com/nixxo"
+		},
+		{
+			"name": "Skartorion De Pier",
+			"url": "https://github.com/Skartorion"
+		}
+	],
+	"type": "module",
+	"packageManager": "pnpm@12.15.0",
+	"sideEffects": false,
+	"license": "LGPL-3.0-or-later",
+	"homepage": "https://github.com/mbeps/quick-settings-tweaks#readme",
+	"private": true,
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"format": "biome format --write .",
+		"build": "bash install.sh build",
+		"ext:install": "bash install.sh install",
+		"enable": "bash install.sh enable",
+		"log": "bash install.sh log",
+		"compile-preferences": "bash install.sh compile-preferences",
+		"create-release": "bash install.sh create-release",
+		"update-po": "bash install.sh update-po",
+		"dev": "bash install.sh dev"
+	},
+	"bugs": {
+		"url": "https://github.com/mbeps/quick-settings-tweaks/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/mbeps/quick-settings-tweaks.git"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.6.7",
+		"sass": "^1.83.4",
+		"typescript": "^5.7.3"
+	},
+	"dependencies": {
+		"@girs/gjs": "^4.0.0-beta.38",
+		"@girs/gnome-shell": "^49.1.0"
+	}
 }

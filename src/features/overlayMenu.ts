@@ -1,64 +1,78 @@
-import Clutter from "gi://Clutter"
-import { QuickSlider, type QuickSettingsMenu } from "resource:///org/gnome/shell/ui/quickSettings.js"
-import { FeatureBase, type SettingLoader } from "../libs/shell/feature.js"
-import { QuickSettingsMenuTracker } from "../libs/shell/quickSettingsUtils.js"
-import * as AdvAni from "../libs/shell/advani.js"
-import Global from "../global.js"
-import Maid from "../libs/shared/maid.js"
+import Clutter from "gi://Clutter";
+import {
+	type QuickSettingsMenu,
+	QuickSlider,
+} from "resource:///org/gnome/shell/ui/quickSettings.js";
+import Global from "../global.js";
+import type Maid from "../libs/shared/maid.js";
+import * as AdvAni from "../libs/shell/advani.js";
+import { FeatureBase, type SettingLoader } from "../libs/shell/feature.js";
+import { QuickSettingsMenuTracker } from "../libs/shell/quickSettingsUtils.js";
 
 export class OverlayMenu extends FeatureBase {
 	// #region settings
-	enabled: boolean
-	width: number
-	duration: number
-	animationStyle: string
-	overflowAnchor: string
+	enabled: boolean;
+	width: number;
+	duration: number;
+	animationStyle: string;
+	overflowAnchor: string;
 	override loadSettings(loader: SettingLoader): void {
-		this.enabled = loader.loadBoolean("overlay-menu-enabled")
-		this.width = loader.loadInt("overlay-menu-width")
-		this.duration = loader.loadInt("overlay-menu-animate-duration")
-		this.animationStyle = loader.loadString("overlay-menu-animate-style")
-		this.overflowAnchor = loader.loadString("overlay-menu-overflow-anchor")
+		this.enabled = loader.loadBoolean("overlay-menu-enabled");
+		this.width = loader.loadInt("overlay-menu-width");
+		this.duration = loader.loadInt("overlay-menu-animate-duration");
+		this.animationStyle = loader.loadString("overlay-menu-animate-style");
+		this.overflowAnchor = loader.loadString("overlay-menu-overflow-anchor");
 	}
 	// #endregion settings
 
 	getCoords(menu: QuickSettingsMenu): {
-		outerHeight: number,
-		targetHeight: number,
-		targetWidth: number,
-		sourceX: number,
-		sourceY: number,
-		sourceHeight: number,
-		sourceWidth: number,
-		offsetY: number,
-		offsetX: number,
+		outerHeight: number;
+		targetHeight: number;
+		targetWidth: number;
+		sourceX: number;
+		sourceY: number;
+		sourceHeight: number;
+		sourceWidth: number;
+		offsetY: number;
+		offsetX: number;
 	} {
-		menu.actor.height = -1
-		let [outerHeight] = menu.actor.get_preferred_height(-1)
-		const targetWidth = menu.actor.width - menu.box.marginLeft - menu.box.marginRight
-		const targetHeight = outerHeight - menu.box.marginTop
-		let offsetY: number
-		if (Global.QuickSettingsBox.height < targetHeight && this.overflowAnchor != "center") {
+		menu.actor.height = -1;
+		const [outerHeight] = menu.actor.get_preferred_height(-1);
+		const targetWidth =
+			menu.actor.width - menu.box.marginLeft - menu.box.marginRight;
+		const targetHeight = outerHeight - menu.box.marginTop;
+		let offsetY: number;
+		if (
+			Global.QuickSettingsBox.height < targetHeight &&
+			this.overflowAnchor !== "center"
+		) {
 			// When menu is taller than Quick Settings box and anchor is set
-			if (this.overflowAnchor == "top") {
+			if (this.overflowAnchor === "top") {
 				// Top anchor: menu top aligns with box top, overflows downward
-				offsetY = 0
+				offsetY = 0;
 			} else {
 				// Bottom anchor: menu bottom aligns with box bottom, overflows upward
 				// Ensure offsetY doesn't go negative to prevent menu from positioning above the box
-				offsetY = Math.max(0, Global.QuickSettingsBox.height - targetHeight)
+				offsetY = Math.max(0, Global.QuickSettingsBox.height - targetHeight);
 			}
 		} else {
-			offsetY = Math.floor((Global.QuickSettingsBox.height - targetHeight) / 2)
+			offsetY = Math.floor((Global.QuickSettingsBox.height - targetHeight) / 2);
 		}
-		const isSlider = menu.sourceActor instanceof QuickSlider
-		const sourceHeight = Math.floor(menu.sourceActor.height + 0.5)
-		const sourceBaseWidth = Math.floor(menu.sourceActor.width + 0.5)
-		const sourceWidth = isSlider ? sourceHeight : sourceBaseWidth
-		const sourceBaseX = Math.floor(Global.QuickSettingsGrid.x + menu.sourceActor.x + 0.5)
-		const sourceY = Math.floor(Global.QuickSettingsGrid.y + menu.sourceActor.y + 0.5)
-		const sourceX = sourceBaseX + (isSlider ? (sourceBaseWidth - sourceWidth) : 0)
-		const offsetX = Math.floor((Global.QuickSettingsBox.width - targetWidth) / 2)
+		const isSlider = menu.sourceActor instanceof QuickSlider;
+		const sourceHeight = Math.floor(menu.sourceActor.height + 0.5);
+		const sourceBaseWidth = Math.floor(menu.sourceActor.width + 0.5);
+		const sourceWidth = isSlider ? sourceHeight : sourceBaseWidth;
+		const sourceBaseX = Math.floor(
+			Global.QuickSettingsGrid.x + menu.sourceActor.x + 0.5,
+		);
+		const sourceY = Math.floor(
+			Global.QuickSettingsGrid.y + menu.sourceActor.y + 0.5,
+		);
+		const sourceX =
+			sourceBaseX + (isSlider ? sourceBaseWidth - sourceWidth : 0);
+		const offsetX = Math.floor(
+			(Global.QuickSettingsBox.width - targetWidth) / 2,
+		);
 		return {
 			outerHeight,
 			targetHeight,
@@ -69,29 +83,33 @@ export class OverlayMenu extends FeatureBase {
 			sourceWidth,
 			offsetY,
 			offsetX,
-		}
+		};
 	}
 
 	onOpen(_maid: Maid, menu: QuickSettingsMenu, isOpen: boolean) {
-		if (!isOpen || !this.duration) menu.actor.set_easing_duration(0)
-		else menu.actor.remove_all_transitions()
-		if (!isOpen) return
+		if (!isOpen || !this.duration) menu.actor.set_easing_duration(0);
+		else menu.actor.remove_all_transitions();
+		if (!isOpen) return;
 
-		const coords = this.getCoords(menu)
-		this.xconstraint.offset = coords.offsetX
-		this.yconstraint.offset = coords.offsetY
+		const coords = this.getCoords(menu);
+		this.xconstraint.offset = coords.offsetX;
+		this.yconstraint.offset = coords.offsetY;
 
 		if (this.duration) {
-			menu.box.opacity = 0
+			menu.box.opacity = 0;
 			menu.box.ease({
 				opacity: 255,
 				duration: Math.floor(this.duration / 3),
-			})
-			if (this.animationStyle == "flyout") {
-				menu.box.translation_x = Math.floor(coords.sourceX - coords.offsetX + menu.box.marginLeft)
-				menu.box.translation_y = Math.floor(coords.sourceY - coords.offsetY + menu.box.marginTop)
-				menu.box.scale_x = coords.sourceWidth / coords.targetWidth
-				menu.box.scale_y = coords.sourceHeight / coords.targetHeight
+			});
+			if (this.animationStyle === "flyout") {
+				menu.box.translation_x = Math.floor(
+					coords.sourceX - coords.offsetX + menu.box.marginLeft,
+				);
+				menu.box.translation_y = Math.floor(
+					coords.sourceY - coords.offsetY + menu.box.marginTop,
+				);
+				menu.box.scale_x = coords.sourceWidth / coords.targetWidth;
+				menu.box.scale_y = coords.sourceHeight / coords.targetHeight;
 				AdvAni.ease(menu.box, {
 					translation_x: 0,
 					translation_y: 0,
@@ -100,12 +118,12 @@ export class OverlayMenu extends FeatureBase {
 					mode: AdvAni.AdvAnimationMode.LowBackover,
 					// mode: Clutter.AnimationMode.EASE_OUT_EXPO,
 					duration: this.duration,
-				})
-			} else if (this.animationStyle == "dialog") {
-				menu.box.translation_x = 0.2*coords.targetWidth*.5
-				menu.box.translation_y = 0.2*coords.targetHeight*.5
-				menu.box.scale_x = 0.8
-				menu.box.scale_y = 0.8
+				});
+			} else if (this.animationStyle === "dialog") {
+				menu.box.translation_x = 0.2 * coords.targetWidth * 0.5;
+				menu.box.translation_y = 0.2 * coords.targetHeight * 0.5;
+				menu.box.scale_x = 0.8;
+				menu.box.scale_y = 0.8;
 				AdvAni.ease(menu.box, {
 					translation_x: 0,
 					translation_y: 0,
@@ -114,84 +132,77 @@ export class OverlayMenu extends FeatureBase {
 					mode: AdvAni.AdvAnimationMode.MiddleBackover,
 					// mode: Clutter.AnimationMode.EASE_OUT_EXPO,
 					duration: this.duration,
-				})
+				});
 			}
 		}
 	}
 
 	onMenuCreated(maid: Maid, menu: QuickSettingsMenu) {
-		menu.actor.get_constraints()[0].enabled = false
+		menu.actor.get_constraints()[0].enabled = false;
 		if (this.width) {
-			menu.actor.width = this.width
-			menu.actor.x_expand = false
-			menu.actor.x_align = Clutter.ActorAlign.CENTER
+			menu.actor.width = this.width;
+			menu.actor.x_expand = false;
+			menu.actor.x_align = Clutter.ActorAlign.CENTER;
 		}
-		maid.connectJob(menu.box, "notify::height", ()=>{
-			if (!menu.isOpen) return
-			const coords = this.getCoords(menu)
-			this.yconstraint.offset = coords.offsetY
-			this.xconstraint.offset = coords.offsetX
-		})
+		maid.connectJob(menu.box, "notify::height", () => {
+			if (!menu.isOpen) return;
+			const coords = this.getCoords(menu);
+			this.yconstraint.offset = coords.offsetY;
+			this.xconstraint.offset = coords.offsetX;
+		});
 	}
 
-	tracker: QuickSettingsMenuTracker
-	yconstraint: Clutter.BindConstraint
+	tracker: QuickSettingsMenuTracker;
+	xconstraint: Clutter.BindConstraint;
+	yconstraint: Clutter.BindConstraint;
 	override reload(changedKey?: string): void {
-		if (changedKey == "overlay-menu-animate-duration") return
-		if (changedKey == "overlay-menu-animate-style") return
-		if (changedKey == "overlay-menu-overflow-anchor") return
-		super.reload(changedKey)
+		if (changedKey === "overlay-menu-animate-duration") return;
+		if (changedKey === "overlay-menu-animate-style") return;
+		if (changedKey === "overlay-menu-overflow-anchor") return;
+		super.reload(changedKey);
 	}
 	override onLoad(): void {
-		if (!this.enabled) return
+		if (!this.enabled) return;
 
 		// Offset handle for Y
 		this.yconstraint = new Clutter.BindConstraint({
 			coordinate: Clutter.BindCoordinate.Y,
-			// @ts-ignore Box pointer is private
 			source: Global.QuickSettingsMenu._boxPointer,
-		})
-		
+		});
+
 		// Offset handle for X
 		this.xconstraint = new Clutter.BindConstraint({
 			coordinate: Clutter.BindCoordinate.X,
-			// @ts-ignore Box pointer is private
 			source: Global.QuickSettingsMenu._boxPointer,
-		})
-		
+		});
+
 		// Disable default sync (overlay x&y offset)
-		// @ts-ignore Overlay is private field
-		Global.QuickSettingsMenu._overlay.get_constraints()[0].enabled = false
-		// @ts-ignore Overlay is private field
-		Global.QuickSettingsMenu._overlay.add_constraint(this.yconstraint)
-		// @ts-ignore Overlay is private field
-		Global.QuickSettingsMenu._overlay.add_constraint(this.xconstraint)
+		Global.QuickSettingsMenu._overlay.get_constraints()[0].enabled = false;
+		Global.QuickSettingsMenu._overlay.add_constraint(this.yconstraint);
+		Global.QuickSettingsMenu._overlay.add_constraint(this.xconstraint);
 
 		// Disable Placeholder height sync (grid height increase)
-		// @ts-ignore Overlay is private field
-		Global.QuickSettingsGrid.layout_manager._overlay.get_constraints()[0].enabled = false
+		// @ts-expect-error Overlay is private field
+		Global.QuickSettingsGrid.layout_manager._overlay.get_constraints()[0].enabled = false;
 
-		this.tracker = new QuickSettingsMenuTracker()
-		this.tracker.onMenuCreated = this.onMenuCreated.bind(this)
-		this.tracker.onMenuOpen = this.onOpen.bind(this)
-		this.tracker.load()
+		this.tracker = new QuickSettingsMenuTracker();
+		this.tracker.onMenuCreated = this.onMenuCreated.bind(this);
+		this.tracker.onMenuOpen = this.onOpen.bind(this);
+		this.tracker.load();
 	}
 	override onUnload(): void {
-		const tracker = this.tracker
-		if (!tracker) return
-		this.tracker = null
+		const tracker = this.tracker;
+		if (!tracker) return;
+		this.tracker = null;
 		for (const menu of tracker.items) {
-			menu.actor.x_expand = true
-			menu.actor.get_constraints()[0].enabled = true
+			menu.actor.x_expand = true;
+			menu.actor.get_constraints()[0].enabled = true;
 		}
-		tracker.unload()
-		// @ts-ignore Overlay is private field
-		Global.QuickSettingsMenu._overlay.get_constraints()[0].enabled = true
-		// @ts-ignore Overlay is private field
-		Global.QuickSettingsGrid.layout_manager._overlay.get_constraints()[0].enabled = true
-		// @ts-ignore Overlay is private field
-		Global.QuickSettingsMenu._overlay.remove_constraint(this.yconstraint)
-		// @ts-ignore Overlay is private field
-		Global.QuickSettingsMenu._overlay.remove_constraint(this.xconstraint)
+		tracker.unload();
+		Global.QuickSettingsMenu._overlay.get_constraints()[0].enabled = true;
+		// @ts-expect-error Overlay is private field
+		Global.QuickSettingsGrid.layout_manager._overlay.get_constraints()[0].enabled = true;
+		Global.QuickSettingsMenu._overlay.remove_constraint(this.yconstraint);
+		Global.QuickSettingsMenu._overlay.remove_constraint(this.xconstraint);
 	}
 }

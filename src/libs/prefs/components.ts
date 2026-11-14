@@ -1,91 +1,107 @@
+import Adw from "gi://Adw";
+import Gdk from "gi://Gdk";
+import Gio from "gi://Gio";
+import GLib from "gi://GLib";
+import GObject from "gi://GObject";
+import Gtk from "gi://Gtk";
+import { gettext as _ } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
+import { deepEqual } from "../shared/jsUtils.js";
 
-import Adw from "gi://Adw"
-import Gio from "gi://Gio"
-import Gtk from "gi://Gtk"
-import Gdk from "gi://Gdk"
-import GLib from "gi://GLib"
-import GObject from "gi://GObject"
-import { gettext as _ } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js"
-import { deepEqual } from "../shared/jsUtils.js"
-
-function addChildren(target: any, funcName: string, children?: any[]) {
-	if (!children) return
+function addChildren<K extends string, C extends Gtk.Widget>(
+	target: Record<K, (child: C) => void>,
+	funcName: K,
+	children?: (C | null | undefined)[],
+) {
+	if (!children) return;
 	for (const item of children) {
-		if (!item) continue
-		target[funcName](item)
+		if (!item) continue;
+		target[funcName](item);
 	}
 }
 
-function setLinkCursor(target: any) {
-	target.cursor = Gdk.Cursor.new_from_name("pointer", null)
+function setLinkCursor(target: Gtk.Widget) {
+	target.cursor = Gdk.Cursor.new_from_name("pointer", null);
 }
 
 export function setScrollToFocus(target: Adw.PreferencesPage, value: boolean) {
-	const viewport: Gtk.Viewport = target
+	const viewport = target
 		.get_first_child() // GtkScrolledWindow
-		.get_first_child() as any // GtkViewport
-	viewport.scrollToFocus = value
+		.get_first_child() as Gtk.Viewport; // GtkViewport
+	viewport.scrollToFocus = value;
 }
-export function delayedSetScrollToFocus(target: Adw.PreferencesPage, value: boolean) {
-	const id = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10, ()=>{
-		setScrollToFocus(target, value)
-		return GLib.SOURCE_REMOVE
-	})
-	GLib.source_set_name_by_id(id, "[quick-settings-tweaks] delayedSetScrollToFocus: id")
+export function delayedSetScrollToFocus(
+	target: Adw.PreferencesPage,
+	value: boolean,
+) {
+	const id = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10, () => {
+		setScrollToFocus(target, value);
+		return GLib.SOURCE_REMOVE;
+	});
+	GLib.source_set_name_by_id(
+		id,
+		"[quick-settings-tweaks] delayedSetScrollToFocus: id",
+	);
 }
 // Fix adwaita scroll flicking issue
 export function fixPageScrollIssue(page: Adw.PreferencesPage) {
-	page.connect("unmap", ()=>{
-		setScrollToFocus(page, false)
-	})
-	page.connect("map", ()=>{
-		delayedSetScrollToFocus(page, true)
-	})
+	page.connect("unmap", () => {
+		setScrollToFocus(page, false);
+	});
+	page.connect("map", () => {
+		delayedSetScrollToFocus(page, true);
+	});
 }
-export function pushButton(row_with_suffix: Adw.ActionRow, button: any): any {
+export function pushButton(
+	row_with_suffix: Adw.ActionRow,
+	button: Gtk.Widget,
+): Gtk.Widget | null {
 	const suffixes = row_with_suffix
-	.get_first_child() // GtkBox header
-	.get_last_child() // GtkBox suffixes
-	const first_suffix = suffixes.get_first_child()
-	button
-	.insert_before(
-		suffixes, first_suffix
-	)
-	return first_suffix
+		.get_first_child() // GtkBox header
+		.get_last_child(); // GtkBox suffixes
+	const first_suffix = suffixes.get_first_child();
+	button.insert_before(suffixes, first_suffix);
+	return first_suffix;
 }
 export function pushDetailedButton(
 	row_with_suffix: Adw.ActionRow,
-	onDetailed: ()=>void
+	onDetailed: () => void,
 ): Gtk.Button {
 	const buttonBox = Button({
 		action: onDetailed,
 		iconName: "emblem-system-symbolic",
 		hasFrame: false,
 		tooltip: _("Details"),
-	})
-	buttonBox.marginEnd = 2
-	const button: Gtk.Button = buttonBox.get_first_child() as any
-	const image: Gtk.Image = button.get_first_child() as any
-	image.pixel_size = 12
-	image.opacity = 0.75
-	row_with_suffix.activatable_widget = null
-	row_with_suffix.connect("activated", ()=>onDetailed())
-	const switchWidget: Gtk.Switch|null = pushButton(row_with_suffix, buttonBox)
-	if (switchWidget) switchWidget.canFocus = true
-	return button
+	});
+	buttonBox.marginEnd = 2;
+	const button = buttonBox.get_first_child() as Gtk.Button;
+	const image = button.get_first_child() as Gtk.Image;
+	image.pixel_size = 12;
+	image.opacity = 0.75;
+	row_with_suffix.activatable_widget = null;
+	row_with_suffix.connect("activated", () => onDetailed());
+	const switchWidget = pushButton(row_with_suffix, buttonBox);
+	if (switchWidget) switchWidget.canFocus = true;
+	return button;
 }
-export function removeRowBottomBorder(row: Adw.EntryRow|Adw.ActionRow) {
-	const style = new Gtk.CssProvider()
-	style.load_from_string("row{border-bottom-width:0px;}")
-	row.get_style_context().add_provider(style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+export function removeRowBottomBorder(row: Adw.EntryRow | Adw.ActionRow) {
+	const style = new Gtk.CssProvider();
+	style.load_from_string("row{border-bottom-width:0px;}");
+	row
+		.get_style_context()
+		.add_provider(style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
-export function removeRowMinHeight(row: Adw.EntryRow|Adw.ActionRow) {
-	const styleRow = new Gtk.CssProvider()
-	styleRow.load_from_string("row{min-height:0px;}")
-	row.get_style_context().add_provider(styleRow, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-	const styleBox = new Gtk.CssProvider()
-	styleBox.load_from_string(".header{min-height:0px; margin-bottom: 4px;}")
-	row.get_first_child().get_style_context().add_provider(styleBox, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+export function removeRowMinHeight(row: Adw.EntryRow | Adw.ActionRow) {
+	const styleRow = new Gtk.CssProvider();
+	styleRow.load_from_string("row{min-height:0px;}");
+	row
+		.get_style_context()
+		.add_provider(styleRow, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+	const styleBox = new Gtk.CssProvider();
+	styleBox.load_from_string(".header{min-height:0px; margin-bottom: 4px;}");
+	row
+		.get_first_child()
+		.get_style_context()
+		.add_provider(styleBox, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
 // #region Dialog
@@ -96,67 +112,95 @@ export function Dialog({
 	usePopup,
 	childrenRequest,
 }: Dialog.Options): Adw.PreferencesDialog {
-	const dialog = new Dialog.PrefDialog(title, childrenRequest, usePopup ?? false)
-	if (minHeight) dialog.height_request = minHeight
-	dialog.present(window)
-	return dialog
+	const dialog = new Dialog.PrefDialog(
+		title,
+		childrenRequest,
+		usePopup ?? false,
+	);
+	if (minHeight) dialog.height_request = minHeight;
+	dialog.present(window);
+	return dialog;
 }
 export namespace Dialog {
-	export type ChildrenRequest = (page: Adw.PreferencesPage, dialog: Adw.PreferencesDialog)=>any
-	export interface Options {
-		title?: string
-		minHeight?: number
-		childrenRequest: ChildrenRequest
-		window: Adw.PreferencesWindow
-		usePopup?: boolean
-	}
-	export const PrefDialogPage = GObject.registerClass({
-		GTypeName: "offx1-pref-components-PrefDialogPage",
-	}, class PrefDialogPage extends Adw.PreferencesPage {
-		constructor(childrenRequest: ChildrenRequest, dialog: Adw.PreferencesDialog, title?: string) {
-			super({
-				name: "PrefDialogPage",
-			})
-			if (title) {
-				this.title = title
-			}
-			addChildren(this, "add", childrenRequest(this, dialog))
-		}
-	})
-	export const PrefDialog = GObject.registerClass({
-		GTypeName: "offx1-pref-components-PrefDialog",
-	}, class PrefDialog extends Adw.PreferencesDialog {
-		constructor(title: string, childrenRequest: ChildrenRequest, usePopup: boolean) {
-			super({
-				title: title ?? "",
-				search_enabled: true,
-				presentation_mode: usePopup
-					? Adw.DialogPresentationMode.FLOATING
-					: Adw.DialogPresentationMode.BOTTOM_SHEET,
-			})
-			this.add(new PrefDialogPage(childrenRequest, this))
-		}
-	})
-	export function StackedPage({ title, dialog, childrenRequest }: {
-		title: string,
+	export type ChildrenRequest = (
+		page: Adw.PreferencesPage,
 		dialog: Adw.PreferencesDialog,
-		childrenRequest: ChildrenRequest,
+	) => Adw.PreferencesGroup[];
+	export interface Options {
+		title?: string;
+		minHeight?: number;
+		childrenRequest: ChildrenRequest;
+		window: Adw.PreferencesWindow;
+		usePopup?: boolean;
+	}
+	export const PrefDialogPage = GObject.registerClass(
+		{
+			GTypeName: "offx1-pref-components-PrefDialogPage",
+		},
+		class PrefDialogPage extends Adw.PreferencesPage {
+			constructor(
+				childrenRequest: ChildrenRequest,
+				dialog: Adw.PreferencesDialog,
+				title?: string,
+			) {
+				super({
+					name: "PrefDialogPage",
+				});
+				if (title) {
+					this.title = title;
+				}
+				addChildren(this, "add", childrenRequest(this, dialog));
+			}
+		},
+	);
+	export const PrefDialog = GObject.registerClass(
+		{
+			GTypeName: "offx1-pref-components-PrefDialog",
+		},
+		class PrefDialog extends Adw.PreferencesDialog {
+			constructor(
+				title: string,
+				childrenRequest: ChildrenRequest,
+				usePopup: boolean,
+			) {
+				super({
+					title: title ?? "",
+					search_enabled: true,
+					presentation_mode: usePopup
+						? Adw.DialogPresentationMode.FLOATING
+						: Adw.DialogPresentationMode.BOTTOM_SHEET,
+				});
+				this.add(new PrefDialogPage(childrenRequest, this));
+			}
+		},
+	);
+	export function StackedPage({
+		title,
+		dialog,
+		childrenRequest,
+	}: {
+		title: string;
+		dialog: Adw.PreferencesDialog;
+		childrenRequest: ChildrenRequest;
 	}): Adw.NavigationPage {
 		const page = new Adw.NavigationPage({
 			title: title,
 			can_pop: true,
-		})
-		const view = page.child = new Adw.ToolbarView()
-		view.add_top_bar(new Adw.HeaderBar())
-		view.content = new Dialog.PrefDialogPage(childrenRequest, dialog)
-		dialog.push_subpage(page)
-		return page
+		});
+		const view = new Adw.ToolbarView();
+		page.child = view;
+		view.add_top_bar(new Adw.HeaderBar());
+		view.content = new Dialog.PrefDialogPage(childrenRequest, dialog);
+		dialog.push_subpage(page);
+		return page;
 	}
 }
 // #endregion Dialog
 
 // #region ExperimentalIcon
-export function ExperimentalIcon(options?: ExperimentalIcon.Options): Gtk.Image {
+export function ExperimentalIcon(
+	options?: ExperimentalIcon.Options,
+): Gtk.Image {
 	return new Gtk.Image({
 		css_classes: ["icon"],
 		icon_name: "applications-science-symbolic",
@@ -166,46 +210,55 @@ export function ExperimentalIcon(options?: ExperimentalIcon.Options): Gtk.Image 
 		opacity: 0.8,
 		has_tooltip: true,
 		tooltip_text: _("This feature marked as experimental"),
-	})
+	});
 }
 export namespace ExperimentalIcon {
 	export interface Options {
-		marginEnd?: number
-		marginStart?: number
-		pixelSize?: number
+		marginEnd?: number;
+		marginStart?: number;
+		pixelSize?: number;
 	}
-	export function prependExperimentalIcon(holder: Gtk.Widget, options?: ExperimentalIcon.Options) {
-		ExperimentalIcon(options).insert_before(holder,holder.get_first_child())
+	export function prependExperimentalIcon(
+		holder: Gtk.Widget,
+		options?: ExperimentalIcon.Options,
+	) {
+		ExperimentalIcon(options).insert_before(holder, holder.get_first_child());
 	}
 }
 // #endregion ExperimentalIcon
 
 // #region Group
-export function Group(options: Group.Options, children?: any[]): Adw.PreferencesGroup {
-	options.title ??= ""
-	const { experimental, parent, onCreated, nesting } = options
-	delete options.parent
-	delete options.experimental
-	delete options.onCreated
-	delete options.nesting
-	const target = new Adw.PreferencesGroup(options)
-	if (nesting) target.marginTop = 14
-	if (experimental) ExperimentalIcon.prependExperimentalIcon(
-		target.get_first_child().get_first_child(),
-		{ marginEnd: 18, marginStart: 4, pixelSize: 20 }
-	)
-	addChildren(target, "add", children)
-	if (parent) parent.add(target)
-	if (onCreated) onCreated(target)
-	return target
+export function Group(
+	options: Group.Options,
+	children?: (Gtk.Widget | null | undefined)[],
+): Adw.PreferencesGroup {
+	options.title ??= "";
+	const { experimental, parent, onCreated, nesting } = options;
+	delete options.parent;
+	delete options.experimental;
+	delete options.onCreated;
+	delete options.nesting;
+	const target = new Adw.PreferencesGroup(options);
+	if (nesting) target.marginTop = 14;
+	if (experimental)
+		ExperimentalIcon.prependExperimentalIcon(
+			target.get_first_child().get_first_child(),
+			{ marginEnd: 18, marginStart: 4, pixelSize: 20 },
+		);
+	addChildren(target, "add", children);
+	if (parent) parent.add(target);
+	if (onCreated) onCreated(target);
+	return target;
 }
 export namespace Group {
-	export type Options = Partial<Adw.PreferencesGroup.ConstructorProps & {
-		parent: any,
-		experimental: boolean,
-		nesting: boolean,
-		onCreated?: (row: Adw.PreferencesGroup)=>void,
-	}>
+	export type Options = Partial<
+		Adw.PreferencesGroup.ConstructorProps & {
+			parent: Adw.PreferencesPage;
+			experimental: boolean;
+			nesting: boolean;
+			onCreated?: (row: Adw.PreferencesGroup) => void;
+		}
+	>;
 }
 // #endregion Group
 
@@ -228,63 +281,64 @@ export function Row({
 	const row = new Adw.ActionRow({
 		title: title ?? null,
 		subtitle: subtitle ?? null,
-		activatable: (!!uri) || (!!action),
-	})
+		activatable: !!uri || !!action,
+	});
 	if (parent) {
-		parent.add(row)
+		parent.add(row);
 	}
 	if (uri) {
-		row.connect("activated", ()=>{
-			Gio.AppInfo.launch_default_for_uri_async(uri, null, null, null)
-		})
-		setLinkCursor(row)
-		if (!noLinkIcon) Row.addSuffixIcon(row, "adw-external-link-symbolic")
-		row.tooltip_text = uri
-		row.has_tooltip = true
+		row.connect("activated", () => {
+			Gio.AppInfo.launch_default_for_uri_async(uri, null, null, null);
+		});
+		setLinkCursor(row);
+		if (!noLinkIcon) Row.addSuffixIcon(row, "adw-external-link-symbolic");
+		row.tooltip_text = uri;
+		row.has_tooltip = true;
 	}
 	if (action) {
-		row.connect("activated", ()=>action())
-		setLinkCursor(row)
-		if (!noLinkIcon) Row.addSuffixIcon(row, "go-next-symbolic")
+		row.connect("activated", () => action());
+		setLinkCursor(row);
+		if (!noLinkIcon) Row.addSuffixIcon(row, "go-next-symbolic");
 	}
-	if (icon) Row.appendLinkIcon(row, icon)
+	if (icon) Row.appendLinkIcon(row, icon);
 	if (suffix) {
-		row.add_suffix(suffix)
+		row.add_suffix(suffix);
 	}
 	if (prefix) {
-		row.add_prefix(prefix)
+		row.add_prefix(prefix);
 	}
 	if (sensitiveBind) {
 		settings.bind(
 			sensitiveBind,
-			row, "sensitive",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		row.sensitive = settings.get_boolean(sensitiveBind)
+			row,
+			"sensitive",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+		row.sensitive = settings.get_boolean(sensitiveBind);
 	}
-	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child)
-	if (onCreated) onCreated(row)
-	return row
+	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child);
+	if (onCreated) onCreated(row);
+	return row;
 }
 export namespace Row {
 	export interface Options {
-		parent?: any
-		title?: string
-		subtitle?: string
-		uri?: string
-		icon?: string
-		settings?: Gio.Settings
-		sensitiveBind?: string
-		suffix?: Gtk.Widget
-		prefix?: Gtk.Widget
-		experimental?: boolean
-		noLinkIcon?: boolean,
-		action?: ()=>void
-		onCreated?: (row: Adw.ActionRow)=>void
+		parent?: Adw.PreferencesGroup;
+		title?: string;
+		subtitle?: string;
+		uri?: string;
+		icon?: string;
+		settings?: Gio.Settings;
+		sensitiveBind?: string;
+		suffix?: Gtk.Widget;
+		prefix?: Gtk.Widget;
+		experimental?: boolean;
+		noLinkIcon?: boolean;
+		action?: () => void;
+		onCreated?: (row: Adw.ActionRow) => void;
 	}
-	export function appendLinkIcon(row: any, name: string) {
-		const linkText = row.child.get_first_child()
-		linkText.margin_start = 32
+	export function appendLinkIcon(row: Adw.ActionRow, name: string) {
+		const linkText = row.child.get_first_child();
+		linkText.margin_start = 32;
 		const image = new Gtk.Image({
 			css_classes: ["icon"],
 			icon_name: name,
@@ -292,17 +346,19 @@ export namespace Row {
 			margin_start: 2,
 			margin_end: 2,
 			halign: Gtk.Align.START,
-		})
-		image.insert_before(row.child, linkText)
+		});
+		image.insert_before(row.child, linkText);
 	}
 	export function addSuffixIcon(row: Adw.ActionRow, name: string) {
-		row.add_suffix(new Gtk.Image({
-			css_classes: ["icon"],
-			icon_name: name,
-			pixel_size: 16,
-			margin_end: 4,
-			valign: Gtk.Align.CENTER,
-		}))
+		row.add_suffix(
+			new Gtk.Image({
+				css_classes: ["icon"],
+				icon_name: name,
+				pixel_size: 16,
+				margin_end: 4,
+				valign: Gtk.Align.CENTER,
+			}),
+		);
 	}
 }
 // #endregion Row
@@ -315,69 +371,75 @@ export function DialogRow(options: DialogRow.Options): Adw.ActionRow {
 			const dialog = Dialog({
 				...options,
 				title: options.dialogTitle,
-			})
+			});
 			if (options.onDialogCreated) {
-				options.onDialogCreated(dialog)
+				options.onDialogCreated(dialog);
 			}
-		}
-	})
+		},
+	});
 }
 export namespace DialogRow {
 	export interface Options extends Dialog.Options, Row.Options {
-		dialogTitle?: string
-		onDialogCreated?: (dialog: Adw.PreferencesDialog)=>void
+		dialogTitle?: string;
+		onDialogCreated?: (dialog: Adw.PreferencesDialog) => void;
 	}
 }
 // #endregion DialogRow
 
 // #region ResetButton
 export function ResetButton(options: ResetButton.Options): Gtk.Box {
-	const { settings, bind } = options
-	options.iconName ??= "view-refresh-symbolic"
+	const { settings, bind } = options;
+	options.iconName ??= "view-refresh-symbolic";
 	const box = Button({
 		...options,
 		onCreated: null,
-	})
-	box.halign = Gtk.Align.END
-	const button: Gtk.Button = box.get_first_child() as any
-	button.valign = Gtk.Align.CENTER
-	button.has_frame = false
-	button.tooltip_text = _("Reset to default")
-	button.connect("clicked", ()=>settings.reset(bind))
-	const image: Gtk.Image = button.get_first_child() as any
-	image.pixel_size = 12
-	image.opacity = 0.75
-	const setVisible = ()=>{
-		const state = ResetButton.getOptionState(settings, bind)
-		box.visible = options.dontHideWhenMatch ? state.isSet : (!state.isMatch)
-	}
-	const settingsConnection = settings.connect(`changed::${bind}`, setVisible)
-	setVisible()
-	box.connect("destroy", ()=>{
-		settings.disconnect(settingsConnection)
-	})
-	return box
+	});
+	box.halign = Gtk.Align.END;
+	const button = box.get_first_child() as Gtk.Button;
+	button.valign = Gtk.Align.CENTER;
+	button.has_frame = false;
+	button.tooltip_text = _("Reset to default");
+	button.connect("clicked", () => settings.reset(bind));
+	const image = button.get_first_child() as Gtk.Image;
+	image.pixel_size = 12;
+	image.opacity = 0.75;
+	const setVisible = () => {
+		const state = ResetButton.getOptionState(settings, bind);
+		box.visible = options.dontHideWhenMatch ? state.isSet : !state.isMatch;
+	};
+	const settingsConnection = settings.connect(`changed::${bind}`, setVisible);
+	setVisible();
+	box.connect("destroy", () => {
+		settings.disconnect(settingsConnection);
+	});
+	return box;
 }
 export namespace ResetButton {
 	export interface Options extends Button.OptionsBase {
-		bind: string,
-		dontHideWhenMatch?: boolean
+		bind: string;
+		dontHideWhenMatch?: boolean;
 	}
-	export function getOptionState(settings: Gio.Settings, key: string): {
-		isMatch: boolean,
-		isSet: boolean,
+	export function getOptionState(
+		settings: Gio.Settings,
+		key: string,
+	): {
+		isMatch: boolean;
+		isSet: boolean;
 	} {
-		const userValue = settings.get_user_value(key)
-		const defaultValue = settings.get_default_value(key)
+		const userValue = settings.get_user_value(key);
+		const defaultValue = settings.get_default_value(key);
 		return {
 			isSet: userValue != null,
 			isMatch:
-				(userValue == null)
-				|| (userValue && defaultValue && userValue.equal(defaultValue)),
-		}
+				userValue == null ||
+				(userValue && defaultValue && userValue.equal(defaultValue)),
+		};
 	}
-	export function pushResetButton(row_with_suffix: Adw.ActionRow, options: ResetButton.Options) {
-		pushButton(row_with_suffix, ResetButton(options))
+	export function pushResetButton(
+		row_with_suffix: Adw.ActionRow,
+		options: ResetButton.Options,
+	) {
+		pushButton(row_with_suffix, ResetButton(options));
 	}
 }
 // #endregion ResetButton
@@ -397,61 +459,58 @@ export function SwitchRow({
 	onCreated,
 	onDetailed,
 }: SwitchRow.Options): Adw.SwitchRow {
-	if (bind) value ??= settings.get_boolean(bind)
+	if (bind) value ??= settings.get_boolean(bind);
 
 	const row = new Adw.SwitchRow({
 		title: title ?? "",
 		subtitle: subtitle ?? null,
 		active: value,
-	})
-	setLinkCursor(row)
+	});
+	setLinkCursor(row);
 
 	if (action) {
-		row.connect("notify::active", () => action(row.get_active()))
+		row.connect("notify::active", () => action(row.get_active()));
 	}
 
 	if (parent) {
-		parent.add(row)
+		parent.add(row);
 	}
 
-	if (onDetailed) pushDetailedButton(row, onDetailed)
+	if (onDetailed) pushDetailedButton(row, onDetailed);
 
 	if (bind) {
-		settings.bind(
-			bind,
-			row, "active",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		if (!noResetButton) ResetButton.pushResetButton(row, { settings, bind })
+		settings.bind(bind, row, "active", Gio.SettingsBindFlags.DEFAULT);
+		if (!noResetButton) ResetButton.pushResetButton(row, { settings, bind });
 	}
 
 	if (sensitiveBind) {
 		settings.bind(
 			sensitiveBind,
-			row, "sensitive",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		row.sensitive = settings.get_boolean(sensitiveBind)
+			row,
+			"sensitive",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+		row.sensitive = settings.get_boolean(sensitiveBind);
 	}
-	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child)
-	if (onCreated) onCreated(row)
+	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child);
+	if (onCreated) onCreated(row);
 
-	return row
+	return row;
 }
 export namespace SwitchRow {
 	export interface Options {
-		settings?: Gio.Settings
-		value?: boolean
-		bind?: string
-		parent?: any
-		title?: string
-		subtitle?: string
-		action?: (value: boolean)=>void
-		sensitiveBind?: string
-		experimental?: boolean
-		noResetButton?: boolean
-		onCreated?: (row: Adw.SwitchRow)=>void
-		onDetailed?: ()=>void
+		settings?: Gio.Settings;
+		value?: boolean;
+		bind?: string;
+		parent?: Adw.PreferencesGroup;
+		title?: string;
+		subtitle?: string;
+		action?: (value: boolean) => void;
+		sensitiveBind?: string;
+		experimental?: boolean;
+		noResetButton?: boolean;
+		onCreated?: (row: Adw.SwitchRow) => void;
+		onDetailed?: () => void;
 	}
 }
 // #endregion SwitchRow
@@ -471,74 +530,72 @@ export function ToggleButtonRow({
 	noResetButton,
 	onCreated,
 }: ToggleButtonRow.Options): Adw.ActionRow {
-	if (bind) value ??= settings.get_boolean(bind)
+	if (bind) value ??= settings.get_boolean(bind);
 
 	const row = new Adw.ActionRow({
 		title: title ?? "",
 		subtitle: subtitle ?? null,
-	})
+	});
 	const box = new Gtk.Box({
 		margin_bottom: 8,
 		margin_top: 8,
-	})
+	});
 	const toggle = new Gtk.ToggleButton({
 		label: text,
 		active: value,
-	})
-	box.insert_child_after(toggle, null)
-	row.add_suffix(box)
-	setLinkCursor(row)
+	});
+	box.insert_child_after(toggle, null);
+	row.add_suffix(box);
+	setLinkCursor(row);
 
 	if (action) {
-		toggle.connect("notify::active", () => action(toggle.get_active()))
+		toggle.connect("notify::active", () => action(toggle.get_active()));
 	}
 
 	if (parent) {
-		parent.add(row)
+		parent.add(row);
 	}
 
 	if (bind) {
-		settings.bind(
-			bind,
-			toggle, "active",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		if (!noResetButton) ResetButton.pushResetButton(row, { settings, bind })
+		settings.bind(bind, toggle, "active", Gio.SettingsBindFlags.DEFAULT);
+		if (!noResetButton) ResetButton.pushResetButton(row, { settings, bind });
 	}
 
 	if (sensitiveBind) {
 		settings.bind(
 			sensitiveBind,
-			row, "sensitive",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		row.sensitive = settings.get_boolean(sensitiveBind)
+			row,
+			"sensitive",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+		row.sensitive = settings.get_boolean(sensitiveBind);
 		settings.bind(
 			sensitiveBind,
-			toggle, "sensitive",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		toggle.sensitive = settings.get_boolean(sensitiveBind)
+			toggle,
+			"sensitive",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+		toggle.sensitive = settings.get_boolean(sensitiveBind);
 	}
-	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child)
-	if (onCreated) onCreated(row)
+	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child);
+	if (onCreated) onCreated(row);
 
-	return row
+	return row;
 }
 export namespace ToggleButtonRow {
 	export interface Options {
-		settings?: Gio.Settings
-		value?: boolean
-		bind?: string
-		parent?: any
-		title?: string
-		subtitle?: string
-		action?: (value: boolean)=>void
-		sensitiveBind?: string
-		experimental?: boolean
-		text?: string
-		noResetButton?: boolean
-		onCreated?: (row: Adw.ActionRow)=>void
+		settings?: Gio.Settings;
+		value?: boolean;
+		bind?: string;
+		parent?: Adw.PreferencesGroup;
+		title?: string;
+		subtitle?: string;
+		action?: (value: boolean) => void;
+		sensitiveBind?: string;
+		experimental?: boolean;
+		text?: string;
+		noResetButton?: boolean;
+		onCreated?: (row: Adw.ActionRow) => void;
 	}
 }
 // #endregion ToggleButtonRow
@@ -560,114 +617,112 @@ export function Button({
 	const box = new Gtk.Box({
 		margin_bottom: marginBottom ?? 8,
 		margin_top: marginTop ?? 8,
-	})
+	});
 	const button = new Gtk.Button({
 		has_frame: hasFrame ?? true,
-	})
-	box.insert_child_after(button, null)
-	setLinkCursor(button)
+	});
+	box.insert_child_after(button, null);
+	setLinkCursor(button);
 	if (iconName && !text) {
-		button.icon_name = iconName
+		button.icon_name = iconName;
 	}
 	if (text && !iconName) {
-		button.label = text
+		button.label = text;
 	}
 	if (iconName && text) {
-		const box = button.child = new Gtk.Box({})
+		const contentBox = new Gtk.Box({});
+		button.child = contentBox;
 		new Gtk.Image({
 			icon_name: iconName,
 			pixel_size: 12,
 			margin_end: 6,
-		}).insert_before(box, null)
+		}).insert_before(contentBox, null);
 		new Gtk.Label({
 			label: text,
-		}).insert_before(box, null)
+		}).insert_before(contentBox, null);
 	}
 	if (tooltip) {
-		button.tooltip_text = tooltip
-		button.has_tooltip = true
+		button.tooltip_text = tooltip;
+		button.has_tooltip = true;
 	}
 
 	if (action) {
-		button.connect("clicked", () => action())
+		button.connect("clicked", () => action());
 	}
 
 	if (parent) {
-		parent.add(box)
+		parent.add(box);
 	}
 
 	if (sensitiveBind) {
 		settings.bind(
 			sensitiveBind,
-			button, "sensitive",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		button.sensitive = settings.get_boolean(sensitiveBind)
+			button,
+			"sensitive",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+		button.sensitive = settings.get_boolean(sensitiveBind);
 	}
-	if (onCreated) onCreated(box)
+	if (onCreated) onCreated(box);
 
-	return box
+	return box;
 }
 export namespace Button {
 	export interface Options extends OptionsBase {
-		onCreated?: (row: Gtk.Box)=>void
+		onCreated?: (row: Gtk.Box) => void;
 	}
 	export interface OptionsBase {
-		settings?: Gio.Settings
-		parent?: any
-		action?: ()=>void
-		sensitiveBind?: string
-		text?: string
-		marginTop?: number
-		marginBottom?: number
-		iconName?: string
-		hasFrame?: boolean
-		tooltip?: string
+		settings?: Gio.Settings;
+		parent?: Adw.PreferencesGroup;
+		action?: () => void;
+		sensitiveBind?: string;
+		text?: string;
+		marginTop?: number;
+		marginBottom?: number;
+		iconName?: string;
+		hasFrame?: boolean;
+		tooltip?: string;
 	}
 }
 // #endregion Button
 
 // #region ButtonRow
 export function ButtonRow(options: ButtonRow.Options): Adw.ActionRow {
-	const {
-		parent,
-		title,
-		subtitle,
-		experimental,
-		onCreated,
-	} = options
+	const { parent, title, subtitle, experimental, onCreated } = options;
 	const row = new Adw.ActionRow({
 		title: title ?? "",
 		subtitle: subtitle ?? null,
-	})
-	setLinkCursor(row)
-	row.add_suffix(Button({
-		...options,
-		onCreated: null,
-	}))
+	});
+	setLinkCursor(row);
+	row.add_suffix(
+		Button({
+			...options,
+			onCreated: null,
+		}),
+	);
 
 	if (parent) {
-		parent.add(row)
+		parent.add(row);
 	}
 
-	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child)
-	if (onCreated) onCreated(row)
+	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child);
+	if (onCreated) onCreated(row);
 
-	return row
+	return row;
 }
 export namespace ButtonRow {
 	export interface Options extends Button.OptionsBase {
-		settings?: Gio.Settings
-		parent?: any
-		title?: string
-		subtitle?: string
-		action?: ()=>void
-		sensitiveBind?: string
-		experimental?: boolean
-		text?: string
-		marginTop?: number
-		marginBottom?: number
-		onCreated?: (row: Adw.ActionRow)=>void
+		settings?: Gio.Settings;
+		parent?: Adw.PreferencesGroup;
+		title?: string;
+		subtitle?: string;
+		action?: () => void;
+		sensitiveBind?: string;
+		experimental?: boolean;
+		text?: string;
+		marginTop?: number;
+		marginBottom?: number;
+		onCreated?: (row: Adw.ActionRow) => void;
 	}
 }
 // #endregion ButtonRow
@@ -686,56 +741,58 @@ export function UpDownButton({
 	const box = new Gtk.Box({
 		margin_bottom: marginTop ?? 8,
 		margin_top: marginBottom ?? 8,
-		spacing: spacing ?? 8
-	})
+		spacing: spacing ?? 8,
+	});
 	const down = new Gtk.Button({
-		icon_name: "go-down-symbolic"
-	})
+		icon_name: "go-down-symbolic",
+	});
 	const up = new Gtk.Button({
-		icon_name: "go-up-symbolic"
-	})
-	setLinkCursor(up)
-	setLinkCursor(down)
-	box.insert_child_after(up, null)
-	box.insert_child_after(down, up)
+		icon_name: "go-up-symbolic",
+	});
+	setLinkCursor(up);
+	setLinkCursor(down);
+	box.insert_child_after(up, null);
+	box.insert_child_after(down, up);
 
 	if (action) {
-		down.connect("clicked", () => action(UpDownButton.Direction.Down))
-		up.connect("clicked", () => action(UpDownButton.Direction.Up))
+		down.connect("clicked", () => action(UpDownButton.Direction.Down));
+		up.connect("clicked", () => action(UpDownButton.Direction.Up));
 	}
 
 	if (parent) {
-		parent.add(box)
+		parent.add(box);
 	}
 
 	if (sensitiveBind) {
 		settings.bind(
 			sensitiveBind,
-			up, "sensitive",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		up.sensitive = settings.get_boolean(sensitiveBind)
+			up,
+			"sensitive",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+		up.sensitive = settings.get_boolean(sensitiveBind);
 		settings.bind(
 			sensitiveBind,
-			down, "sensitive",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		down.sensitive = settings.get_boolean(sensitiveBind)
+			down,
+			"sensitive",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+		down.sensitive = settings.get_boolean(sensitiveBind);
 	}
-	if (onCreated) onCreated(box)
+	if (onCreated) onCreated(box);
 
-	return box
+	return box;
 }
 export namespace UpDownButton {
 	export interface Options {
-		settings?: Gio.Settings
-		parent?: any
-		marginTop?: number
-		marginBottom?: number
-		spacing?: number
-		action?: (direction: Direction)=>void
-		sensitiveBind?: string
-		onCreated?: (row: Gtk.Box)=>void
+		settings?: Gio.Settings;
+		parent?: Adw.PreferencesGroup;
+		marginTop?: number;
+		marginBottom?: number;
+		spacing?: number;
+		action?: (direction: Direction) => void;
+		sensitiveBind?: string;
+		onCreated?: (row: Gtk.Box) => void;
 	}
 	export enum Direction {
 		Up,
@@ -759,112 +816,116 @@ export function RgbColorRow({
 	value,
 	useAlpha,
 }: RgbColorRow.Options): Adw.ActionRow {
-	if (bind) value ??= settings.get_value(bind).recursiveUnpack()
+	if (bind)
+		value ??= settings.get_value(bind).recursiveUnpack() as RgbColorRow.Color;
 
 	const row = new Adw.ActionRow({
 		title: title ?? "",
 		subtitle: subtitle ?? null,
 		activatable: true,
-	})
+	});
 	const button = new Gtk.ColorButton({
 		margin_start: 6,
 		margin_top: 6,
 		margin_bottom: 6,
 		use_alpha: useAlpha ?? false,
-	})
-	row.add_suffix(button)
+	});
+	row.add_suffix(button);
 	const themeDefaultLabel = new Gtk.Label({
 		label: _("Theme default"),
 		margin_start: 12,
 		margin_end: 12,
 		visible: false,
-	})
-	const themeDefaultOverlay = new Gtk.Overlay()
-	themeDefaultOverlay.child = themeDefaultLabel
-	themeDefaultOverlay.insert_before(
-		button,
-		null
-	)
-	row.connect("activated", ()=>button.activate())
-	setLinkCursor(row)
-	const updateColor = ()=>{
-		themeDefaultLabel.visible = value.length == 0
-		const color = button.get_color().copy()
-		color.red = (value[0] ?? 0) / 255
-		color.green = (value[1] ?? 0) / 255
-		color.blue = (value[2] ?? 0) / 255
-		if (useAlpha) color.alpha = (value[3] ?? 1000) / 1000
-		button.set_rgba(color)
-	}
-	updateColor()
+	});
+	const themeDefaultOverlay = new Gtk.Overlay();
+	themeDefaultOverlay.child = themeDefaultLabel;
+	themeDefaultOverlay.insert_before(button, null);
+	row.connect("activated", () => button.activate());
+	setLinkCursor(row);
+	const updateColor = () => {
+		themeDefaultLabel.visible = value.length === 0;
+		const color = button.get_color().copy();
+		color.red = (value[0] ?? 0) / 255;
+		color.green = (value[1] ?? 0) / 255;
+		color.blue = (value[2] ?? 0) / 255;
+		if (useAlpha) color.alpha = (value[3] ?? 1000) / 1000;
+		button.set_rgba(color);
+	};
+	updateColor();
 
 	if (parent) {
-		parent.add(row)
+		parent.add(row);
 	}
 
-	if (action || bind) button.connect("color-set", ()=>{
-		const color = button.get_rgba()
-		const arr = [
-			Math.floor(color.red * 255 + .5),
-			Math.floor(color.green * 255 + .5),
-			Math.floor(color.blue * 255 + .5)
-		] as RgbColorRow.Color
-		if (useAlpha) arr.push(Math.floor(color.alpha * 1000 + .5))
-		if (bind) settings.set_value(bind, new GLib.Variant("ai", arr))
-		if (action) action(arr)
-	})
-	if (bind) settings.connect(`changed::${bind}`, ()=>{
-		const newValue = settings.get_value(bind).recursiveUnpack()
-		if (
-			newValue[0] != value[0]
-			|| newValue[1] != value[1]
-			|| newValue[2] != value[2]
-			|| newValue[3] != value[3]
-		) {
-			value = newValue
-			updateColor()
-		}
-	})
+	if (action || bind)
+		button.connect("color-set", () => {
+			const color = button.get_rgba();
+			const arr = [
+				Math.floor(color.red * 255 + 0.5),
+				Math.floor(color.green * 255 + 0.5),
+				Math.floor(color.blue * 255 + 0.5),
+			] as RgbColorRow.Color;
+			if (useAlpha) arr.push(Math.floor(color.alpha * 1000 + 0.5));
+			if (bind) settings.set_value(bind, new GLib.Variant("ai", arr));
+			if (action) action(arr);
+		});
+	if (bind)
+		settings.connect(`changed::${bind}`, () => {
+			const newValue = settings
+				.get_value(bind)
+				.recursiveUnpack() as RgbColorRow.Color;
+			if (
+				newValue[0] !== value[0] ||
+				newValue[1] !== value[1] ||
+				newValue[2] !== value[2] ||
+				newValue[3] !== value[3]
+			) {
+				value = newValue;
+				updateColor();
+			}
+		});
 
 	if (sensitiveBind) {
 		settings.bind(
 			sensitiveBind,
-			row, "sensitive",
-			Gio.SettingsBindFlags.DEFAULT
-		)
+			row,
+			"sensitive",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
 		settings.bind(
 			sensitiveBind,
-			button, "sensitive",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		button.sensitive = row.sensitive = settings.get_boolean(sensitiveBind)
+			button,
+			"sensitive",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+		button.sensitive = row.sensitive = settings.get_boolean(sensitiveBind);
 	}
 
 	if (bind && !noResetButton) {
-		ResetButton.pushResetButton(row, { settings, bind })
+		ResetButton.pushResetButton(row, { settings, bind });
 	}
-	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child)
+	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child);
 
-	if (onCreated) onCreated(row)
+	if (onCreated) onCreated(row);
 
-	return row
+	return row;
 }
 export namespace RgbColorRow {
-	export type Color = number[]
+	export type Color = number[];
 	export interface Options {
-		title?: string
-		subtitle?: string
-		action?: (color: Color)=>void
-		sensitiveBind?: string
-		settings?: Gio.Settings
-		bind?: string
-		experimental?: boolean
-		noResetButton?: boolean
-		onCreated?: (row: Adw.ActionRow)=>void
-		parent?: any
-		value?: Color
-		useAlpha?: boolean
-		enableThemeDefault?: boolean
+		title?: string;
+		subtitle?: string;
+		action?: (color: Color) => void;
+		sensitiveBind?: string;
+		settings?: Gio.Settings;
+		bind?: string;
+		experimental?: boolean;
+		noResetButton?: boolean;
+		onCreated?: (row: Adw.ActionRow) => void;
+		parent?: Adw.PreferencesGroup;
+		value?: Color;
+		useAlpha?: boolean;
+		enableThemeDefault?: boolean;
 	}
 }
 // #endregion RgbColorRow
@@ -882,56 +943,53 @@ export function EntryRow({
 	noResetButton,
 	onCreated,
 }: EntryRow.Options): Adw.EntryRow {
-	if (bind) value ??= settings.get_string(bind)
+	if (bind) value ??= settings.get_string(bind);
 
 	const row = new Adw.EntryRow({
 		title: title ?? "",
-	})
+	});
 
 	if (action) {
 		row.connect("notify::text", () => {
-			action(row.text)
-		})
+			action(row.text);
+		});
 	}
 
 	if (parent) {
-		parent.add(row)
+		parent.add(row);
 	}
 
 	if (bind) {
-		settings.bind(
-			bind,
-			row, "text",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		if (!noResetButton) row.add_suffix(ResetButton({ settings, bind }))
+		settings.bind(bind, row, "text", Gio.SettingsBindFlags.DEFAULT);
+		if (!noResetButton) row.add_suffix(ResetButton({ settings, bind }));
 	}
 
 	if (sensitiveBind) {
 		settings.bind(
 			sensitiveBind,
-			row, "sensitive",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		row.sensitive = settings.get_boolean(sensitiveBind)
+			row,
+			"sensitive",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+		row.sensitive = settings.get_boolean(sensitiveBind);
 	}
-	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child)
-	if (onCreated) onCreated(row)
+	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child);
+	if (onCreated) onCreated(row);
 
-	return row
+	return row;
 }
 export namespace EntryRow {
 	export interface Options {
-		settings?: Gio.Settings
-		bind?: string
-		parent?: any
-		value?: string
-		title?: string
-		action?: (value: string)=>void
-		sensitiveBind?: string
-		experimental?: boolean
-		noResetButton?: boolean
-		onCreated?: (row: Adw.EntryRow)=>void
+		settings?: Gio.Settings;
+		bind?: string;
+		parent?: Adw.PreferencesGroup;
+		value?: string;
+		title?: string;
+		action?: (value: string) => void;
+		sensitiveBind?: string;
+		experimental?: boolean;
+		noResetButton?: boolean;
+		onCreated?: (row: Adw.EntryRow) => void;
 	}
 }
 // #endregion EntryRow
@@ -954,7 +1012,7 @@ export function AdjustmentRow({
 	noResetButton,
 	onCreated,
 }: AdjustmentRow.Options): Adw.SpinRow {
-	if (bind) value ??= settings.get_int(bind)
+	if (bind) value ??= settings.get_int(bind);
 
 	const row = new Adw.SpinRow({
 		title: title ?? "",
@@ -964,118 +1022,115 @@ export function AdjustmentRow({
 			lower: min ?? 0,
 			stepIncrement: stepIncrement ?? 1,
 			pageIncrement: pageIncrement ?? 10,
-			value: value
+			value: value,
 		}),
-	})
-	setLinkCursor(row)
-	const header = row
-	.get_first_child() // GtkBox header
-	const suffixes = header
-	.get_last_child() // GtkBox suffixes
-	const spin = suffixes
-	.get_first_child() // GtkSpinButton spin_button
-	spin.hexpand = false
-	suffixes.hexpand = false
-	new Gtk.Box({ hexpand: true }).insert_before(header, suffixes)
+	});
+	setLinkCursor(row);
+	const header = row.get_first_child(); // GtkBox header
+	const suffixes = header.get_last_child(); // GtkBox suffixes
+	const spin = suffixes.get_first_child(); // GtkSpinButton spin_button
+	spin.hexpand = false;
+	suffixes.hexpand = false;
+	new Gtk.Box({ hexpand: true }).insert_before(header, suffixes);
 
 	if (action) {
 		row.connect("notify::value", () => {
-			action(row.get_value())
-		})
+			action(row.get_value());
+		});
 	}
 
 	if (parent) {
-		parent.add(row)
+		parent.add(row);
 	}
 
 	if (bind) {
-		settings.bind(
-			bind,
-			row, "value",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		if (!noResetButton) ResetButton.pushResetButton(row, { settings, bind })
+		settings.bind(bind, row, "value", Gio.SettingsBindFlags.DEFAULT);
+		if (!noResetButton) ResetButton.pushResetButton(row, { settings, bind });
 	}
 
 	if (sensitiveBind) {
 		settings.bind(
 			sensitiveBind,
-			row, "sensitive",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		row.sensitive = settings.get_boolean(sensitiveBind)
+			row,
+			"sensitive",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+		row.sensitive = settings.get_boolean(sensitiveBind);
 	}
-	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child)
-	if (onCreated) onCreated(row)
+	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child);
+	if (onCreated) onCreated(row);
 
-	return row
+	return row;
 }
 export namespace AdjustmentRow {
 	export interface Options {
-		settings?: Gio.Settings
-		max?: number
-		min?: number
-		stepIncrement?: number
-		pageIncrement?: number
-		bind?: string
-		parent?: any
-		value?: number
-		title?: string
-		subtitle?: string
-		action?: (value: number)=>void
-		sensitiveBind?: string
-		experimental?: boolean
-		noResetButton?: boolean
-		onCreated?: (row: Adw.SpinRow)=>void
+		settings?: Gio.Settings;
+		max?: number;
+		min?: number;
+		stepIncrement?: number;
+		pageIncrement?: number;
+		bind?: string;
+		parent?: Adw.PreferencesGroup;
+		value?: number;
+		title?: string;
+		subtitle?: string;
+		action?: (value: number) => void;
+		sensitiveBind?: string;
+		experimental?: boolean;
+		noResetButton?: boolean;
+		onCreated?: (row: Adw.SpinRow) => void;
 	}
 }
 // #endregion AdjustmentRow
 
 // #region ExpanderRow
-export function ExpanderRow({
-	parent,
-	title,
-	subtitle,
-	expanded,
-	experimental,
-	useMarkup,
-	action,
-	onCreated,
-}: ExpanderRow.Options, children?: any[]): Adw.ExpanderRow {
+export function ExpanderRow(
+	{
+		parent,
+		title,
+		subtitle,
+		expanded,
+		experimental,
+		useMarkup,
+		action,
+		onCreated,
+	}: ExpanderRow.Options,
+	children?: (Gtk.Widget | null | undefined)[],
+): Adw.ExpanderRow {
 	const row = new Adw.ExpanderRow({
 		title: title ?? null,
 		subtitle: subtitle ?? null,
 		use_markup: useMarkup ?? false,
-	})
-	setLinkCursor(row)
+	});
+	setLinkCursor(row);
 	if (parent) {
-		parent.add(row)
+		parent.add(row);
 	}
-	addChildren(row, "add_row", children)
+	addChildren(row, "add_row", children);
 	if (expanded === false || expanded === true) {
-		row.expanded = expanded
+		row.expanded = expanded;
 	}
-	if (action) row.connect("notify::expanded", ()=>action(row.expanded))
-	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child)
-	if (onCreated) onCreated(row)
-	return row
+	if (action) row.connect("notify::expanded", () => action(row.expanded));
+	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child);
+	if (onCreated) onCreated(row);
+	return row;
 }
 export namespace ExpanderRow {
 	export interface Options {
-		parent?: any
-		title?: string
-		subtitle?: string
-		expanded?: boolean
-		experimental?: boolean
-		useMarkup?: boolean
-		action?: (expanded: boolean)=>void
-		onCreated?: (row: Adw.ExpanderRow)=>void
+		parent?: Adw.PreferencesGroup;
+		title?: string;
+		subtitle?: string;
+		expanded?: boolean;
+		experimental?: boolean;
+		useMarkup?: boolean;
+		action?: (expanded: boolean) => void;
+		onCreated?: (row: Adw.ExpanderRow) => void;
 	}
 }
 // #endregion ExpanderRow
 
 // #region DropdownRow
-export function DropdownRow<T>({
+export function DropdownRow<T extends string | number>({
 	settings,
 	items,
 	bind,
@@ -1089,307 +1144,345 @@ export function DropdownRow<T>({
 	noResetButton,
 	onCreated,
 }: DropdownRow.Options<T>) {
-	let filterModeModel = new Gio.ListStore({ item_type: DropdownRow.Items as any })
-	let type: "number"|"string"
+	const ItemClass = DropdownRow.Items as unknown as {
+		new (name: string, value: T): DropdownRow.DropdownItem<T>;
+		$gtype: GObject.GType;
+	};
+	const filterModeModel = new Gio.ListStore<DropdownRow.DropdownItem<T>>({
+		item_type: ItemClass.$gtype,
+	});
+	let type: "number" | "string";
 	for (const item of items) {
-		type ??= (typeof item.value) as typeof type
-		filterModeModel.append(new (DropdownRow.Items as any)(item.name, item.value))
+		type ??= typeof item.value as typeof type;
+		filterModeModel.append(new ItemClass(item.name, item.value));
 	}
 
-	const getIndex = (value: string) => {
+	const getIndex = (targetValue: T) => {
 		for (let i = 0; i < filterModeModel.get_n_items(); i++) {
-			if ((filterModeModel.get_item(i) as any).value === value) {
-				return i
+			if (filterModeModel.get_item(i)?.value === targetValue) {
+				return i;
 			}
 		}
-		return -1
-	}
-	const getValueFromBind = (): any => {
-		if (type == "string") {
-			return settings.get_string(bind)
+		return -1;
+	};
+	const getValueFromBind = (): T | undefined => {
+		if (type === "string") {
+			return settings.get_string(bind) as T;
 		}
-		if (type == "number") {
-			return settings.get_int(bind)
+		if (type === "number") {
+			return settings.get_int(bind) as T;
 		}
-	}
-	const setValueFromBind = (value: any) => {
-		if (type == "string") {
-			settings.set_string(bind, value)
-			return
+		return undefined;
+	};
+	const setValueFromBind = (val: T) => {
+		if (type === "string") {
+			settings.set_string(bind, val as string);
+			return;
 		}
-		if (type == "number") {
-			settings.set_int(bind, value)
-			return
+		if (type === "number") {
+			settings.set_int(bind, val as number);
+			return;
 		}
-	}
-	if (bind) value ??= getValueFromBind()
-	
-	let row = new Adw.ComboRow({
+	};
+	if (bind) value ??= getValueFromBind();
+
+	const row = new Adw.ComboRow({
 		title: title ?? "",
 		subtitle: subtitle ?? null,
 		model: filterModeModel,
-		expression: new (Gtk.PropertyExpression as any)(DropdownRow.Items, null, "name"),
+		expression: Gtk.PropertyExpression.new(ItemClass.$gtype, null, "name"),
 		selected: getIndex(value),
-	})
-	setLinkCursor(row)
+	});
+	setLinkCursor(row);
 
 	if (parent) {
-		parent.add(row)
+		parent.add(row);
 	}
 
 	if (bind) {
-		if (!noResetButton) ResetButton.pushResetButton(row, { settings, bind })
-		const settingsConnection = settings.connect(`changed::${bind}`, ()=>{
-			const selected = (row.selectedItem as any).value
-			const changedTo = getValueFromBind()
-			if (selected != changedTo) {
-				row.selected = getIndex(changedTo)
+		if (!noResetButton) ResetButton.pushResetButton(row, { settings, bind });
+		const settingsConnection = settings.connect(`changed::${bind}`, () => {
+			const selected = (row.selectedItem as DropdownRow.DropdownItem<T>).value;
+			const changedTo = getValueFromBind();
+			if (selected !== changedTo) {
+				row.selected = getIndex(changedTo);
 			}
-		})
-		row.connect("destroy", ()=>settings.disconnect(settingsConnection))
+		});
+		row.connect("destroy", () => settings.disconnect(settingsConnection));
 	}
-	if (bind || action) row.connect("notify::selected", () => {
-		const selected = (row.selectedItem as any).value
-		if (bind && (selected != getValueFromBind())) {
-			setValueFromBind(selected)
-		}
-		if (action) {
-			action(selected)
-		}
-	})
-		
+	if (bind || action)
+		row.connect("notify::selected", () => {
+			const selected = (row.selectedItem as DropdownRow.DropdownItem<T>).value;
+			if (bind && selected !== getValueFromBind()) {
+				setValueFromBind(selected);
+			}
+			if (action) {
+				action(selected);
+			}
+		});
+
 	if (sensitiveBind) {
 		settings.bind(
 			sensitiveBind,
-			row, "sensitive",
-			Gio.SettingsBindFlags.DEFAULT
-		)
-		row.sensitive = settings.get_boolean(sensitiveBind)
+			row,
+			"sensitive",
+			Gio.SettingsBindFlags.DEFAULT,
+		);
+		row.sensitive = settings.get_boolean(sensitiveBind);
 	}
-	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child)
-	if (onCreated) onCreated(row)
+	if (experimental) ExperimentalIcon.prependExperimentalIcon(row.child);
+	if (onCreated) onCreated(row);
 
-	return row
+	return row;
 }
 export namespace DropdownRow {
-	export interface Options<T> {
-		settings?: Gio.Settings
-		items: { name: string, value: T }[]
-		bind?: string
-		parent?: any
-		value?: string
-		title?: string
-		subtitle?: string
-		sensitiveBind?: string
-		action?: (value: string)=>void
-		experimental?: boolean
-		noResetButton?: boolean
-		onCreated?: (row: Adw.ComboRow)=>void
+	export interface DropdownItem<T = string | number> extends GObject.Object {
+		name: string;
+		value: T;
 	}
-	export const Items = GObject.registerClass({
-		Properties: {
-			"name": GObject.ParamSpec.string(
-				"name", "name", "name",
-				GObject.ParamFlags.READWRITE,
-				null),
+	export interface Options<T> {
+		settings?: Gio.Settings;
+		items: { name: string; value: T }[];
+		bind?: string;
+		parent?: Adw.PreferencesGroup;
+		value?: T;
+		title?: string;
+		subtitle?: string;
+		sensitiveBind?: string;
+		action?: (value: T) => void;
+		experimental?: boolean;
+		noResetButton?: boolean;
+		onCreated?: (row: Adw.ComboRow) => void;
+	}
+	export const Items = GObject.registerClass(
+		{
+			Properties: {
+				name: GObject.ParamSpec.string(
+					"name",
+					"name",
+					"name",
+					GObject.ParamFlags.READWRITE,
+					null,
+				),
+			},
 		},
-	}, class DropdownItems<T> extends GObject.Object {
-		value: T
-		_init(name: string, value: T) {
-			super._init({ name })
-			this.value = value
-		}
-	})
+		class DropdownItems<T> extends GObject.Object {
+			value: T;
+			_init(name: string, value: T) {
+				super._init({ name });
+				this.value = value;
+			}
+		},
+	);
 }
 // #endregion DropdownRow
 
 // #region ContributorsRow
-export function ContributorsRow(row: ContributorsRow.Contributor[]): Adw.ActionRow {
-	const target = Row({})
+export function ContributorsRow(
+	row: ContributorsRow.Contributor[],
+): Adw.ActionRow {
+	const target = Row({});
 	const box = new Gtk.Box({
 		baseline_position: Gtk.BaselinePosition.CENTER,
 		homogeneous: true,
 		orientation: Gtk.Orientation.HORIZONTAL,
-	})
-	target.set_child(box)
+	});
+	target.set_child(box);
 	for (const item of row) {
-		let itemButton = new Gtk.Button({
+		const itemButton = new Gtk.Button({
 			has_frame: false,
-		})
-		let itemBox = new Gtk.Box({
+		});
+		const itemBox = new Gtk.Box({
 			baseline_position: Gtk.BaselinePosition.CENTER,
 			orientation: Gtk.Orientation.VERTICAL,
 			cursor: Gdk.Cursor.new_from_name("pointer", null),
-		})
-		itemButton.child = itemBox
-		itemButton.connect("clicked", ()=>{
-			Gio.AppInfo.launch_default_for_uri_async(item.link, null, null, null)
-		})
+		});
+		itemButton.child = itemBox;
+		itemButton.connect("clicked", () => {
+			Gio.AppInfo.launch_default_for_uri_async(item.link, null, null, null);
+		});
 		const itemImage = new Gtk.Image({
 			margin_bottom: 2,
 			margin_top: 2,
 			icon_name: item.image,
 			pixel_size: 38,
-		})
-		itemBox.append(itemImage)
+		});
+		itemBox.append(itemImage);
 		const nameText = new Gtk.Label({
 			label: `<span size="small">${item.name}</span>`,
 			useMarkup: true,
 			hexpand: true,
-		})
-		itemBox.append(nameText)
-		let labelBox = new Gtk.Box({
+		});
+		itemBox.append(nameText);
+		const labelBox = new Gtk.Box({
 			baseline_position: Gtk.BaselinePosition.CENTER,
 			orientation: Gtk.Orientation.VERTICAL,
 			vexpand: true,
 			hexpand: true,
 			margin_bottom: 2,
-			valign: Gtk.Align.CENTER
-		})
+			valign: Gtk.Align.CENTER,
+		});
 		for (const label of item.label.split("\n")) {
 			const labelText = new Gtk.Label({
 				label: `<span size="small">${label}</span>`,
 				useMarkup: true,
 				hexpand: true,
 				opacity: 0.7,
-			})
-			labelBox.append(labelText)
+			});
+			labelBox.append(labelText);
 		}
-		itemBox.append(labelBox)
-		box.append(itemButton)
+		itemBox.append(labelBox);
+		box.append(itemButton);
 	}
-	return target
+	return target;
 }
 export namespace ContributorsRow {
 	export interface Contributor {
-		name: string
-		label: string
-		link: string
-		image: string
+		name: string;
+		label: string;
+		link: string;
+		image: string;
 	}
 }
 // #endregion ContributorsRow
 
 // #region LicenseRow
 export function LicenseRow(item: LicenseRow.License): Adw.ExpanderRow {
-	let contentRow: Adw.ActionRow
-	let loaded = false
-	return ExpanderRow({
-		title: item.name + (item.author ? ` <span alpha="70%"><small>by ${item.author}</small></span>` : ""),
-		subtitle: item.description ?? "",
-		expanded: false,
-		useMarkup: true,
-		action: (expanded)=>{
-			if (!expanded) return
-			if (loaded) return
-			if (item.content) item.content().then(
-				subtitle => contentRow.subtitle = subtitle
-			).catch(
-				error => {
-					contentRow.subtitle = `ERROR: ${error}`
-					log(error)
-				}
-			)
-		}
-	},[
-		Row({
-			title: _("Homepage"),
-			subtitle: item.url,
-			uri: item.url,
-			icon: "go-home",
-		}),
-		item.content ? (contentRow = Row({
-			title: _("License"),
-			subtitle: _("Loading ..."),
-		})) : null,
-		item.licenseUri ? Row({
-			title: _("License"),
-			subtitle: item.licenseUri,
-			icon: "emblem-documents-symbolic",
-			uri: item.licenseUri
-		}) : null,
-		item.affectedFiles ? Row({
-			title: _("Affected Files"),
-			subtitle: item.affectedFiles.join("\n"),
-			icon: "text-x-generic-symbolic",
-		}) : null,
-	])
+	const contentRow = item.content
+		? Row({
+				title: _("License"),
+				subtitle: _("Loading ..."),
+			})
+		: null;
+	const loaded = false;
+	return ExpanderRow(
+		{
+			title:
+				item.name +
+				(item.author
+					? ` <span alpha="70%"><small>by ${item.author}</small></span>`
+					: ""),
+			subtitle: item.description ?? "",
+			expanded: false,
+			useMarkup: true,
+			action: (expanded) => {
+				if (!expanded) return;
+				if (loaded) return;
+				if (item.content)
+					item
+						.content()
+						.then((subtitle) => (contentRow.subtitle = subtitle))
+						.catch((error) => {
+							contentRow.subtitle = `ERROR: ${error}`;
+							log(error);
+						});
+			},
+		},
+		[
+			Row({
+				title: _("Homepage"),
+				subtitle: item.url,
+				uri: item.url,
+				icon: "go-home",
+			}),
+			contentRow,
+			item.licenseUri
+				? Row({
+						title: _("License"),
+						subtitle: item.licenseUri,
+						icon: "emblem-documents-symbolic",
+						uri: item.licenseUri,
+					})
+				: null,
+			item.affectedFiles
+				? Row({
+						title: _("Affected Files"),
+						subtitle: item.affectedFiles.join("\n"),
+						icon: "text-x-generic-symbolic",
+					})
+				: null,
+		],
+	);
 }
 export namespace LicenseRow {
 	export interface License {
-		url: string
-		author: string
-		name: string
-		file?: string
-		content?: ()=>Promise<string>
-		licenseUri?: string
-		affectedFiles?: string[]
-		description?: string
+		url: string;
+		author: string;
+		name: string;
+		file?: string;
+		content?: () => Promise<string>;
+		licenseUri?: string;
+		affectedFiles?: string[];
+		description?: string;
 	}
 }
 // #endregion LicenseRow
 
 // #region LogoBox
 export function LogoBox({
-	icon, name, version, versionAction,
+	icon,
+	name,
+	version,
+	versionAction,
 }: LogoBox.Options): Gtk.Box {
 	const logoBox = new Gtk.Box({
 		baseline_position: Gtk.BaselinePosition.CENTER,
 		margin_top: 6,
 		spacing: 20,
 		orientation: Gtk.Orientation.VERTICAL,
-	})
+	});
 
 	// Logo icon
 	const logoImage = new Gtk.Image({
 		icon_name: icon,
 		pixel_size: 100,
-	})
-	logoBox.append(logoImage)
+	});
+	logoBox.append(logoImage);
 
 	// Extension name
 	const logoText = new Gtk.Label({
 		label: name,
 		css_classes: ["title-2"],
 		halign: Gtk.Align.CENTER,
-	})
-	logoBox.append(logoText)
+	});
+	logoBox.append(logoText);
 
 	// Version
 	const logoVersion = new Gtk.Button({
 		css_classes: ["success"],
 		label: version,
 		halign: Gtk.Align.CENTER,
-	})
-	logoBox.append(logoVersion)
+	});
+	logoBox.append(logoVersion);
 	if (versionAction) {
-		logoVersion.connect("clicked", ()=>versionAction())
-		setLinkCursor(logoVersion)
+		logoVersion.connect("clicked", () => versionAction());
+		setLinkCursor(logoVersion);
 	}
 
-	return logoBox
+	return logoBox;
 }
 export namespace LogoBox {
 	export interface Options {
-		name: string
-		version: string
-		icon: string
-		versionAction?: ()=>void
+		name: string;
+		version: string;
+		icon: string;
+		versionAction?: () => void;
 	}
 }
 // #endregion LogoBox
 
 // #region LogoGroup
 export function LogoGroup(options: LogoGroup.Options): Adw.PreferencesGroup {
-	return Group({
-		parent: options.parent,
-	},[
-		LogoBox(options),
-	])
+	return Group(
+		{
+			parent: options.parent,
+		},
+		[LogoBox(options)],
+	);
 }
 export namespace LogoGroup {
 	export interface Options extends LogoBox.Options {
-		parent: any,
+		parent: Adw.PreferencesPage;
 	}
 }
 // #endregion LogoGroup
@@ -1406,113 +1499,117 @@ export function ChangelogDialog({
 	const dialog = Dialog({
 		window,
 		title: title ?? _("Changelog"),
-		childrenRequest: ()=>[Group({
-			title: title ?? "",
-			description: subtitle ?? "",
-			onCreated: (group: Adw.PreferencesGroup) => {
-				content()
-				.then(ChangelogDialog.getReleases)
-				.then(releases => releases.map(release => Row({
-					title: release.version,
-					subtitle: release.Date ?? "",
-					action: ()=>ChangelogDialog.ChangelogPage(dialog, release),
-					onCreated: (row)=>{
-						if (release.BuildNumber == currentBuildNumber) {
-							row.add_css_class("success")
-							row.title += " " + _("(Current)")
-						}
-						if (release.BuildNumber == defaultPageBuildNumber) {
-							ChangelogDialog.ChangelogPage(dialog, release)
-						}
-						group.add(row)
-					}
-				})))
-				.catch(log)
-			},
-		})]
-	})
-	dialog.height_request = 520
-	return dialog
+		childrenRequest: () => [
+			Group({
+				title: title ?? "",
+				description: subtitle ?? "",
+				onCreated: (group: Adw.PreferencesGroup) => {
+					content()
+						.then(ChangelogDialog.getReleases)
+						.then((releases) =>
+							releases.map((release) =>
+								Row({
+									title: release.version,
+									subtitle: release.Date ?? "",
+									action: () => ChangelogDialog.ChangelogPage(dialog, release),
+									onCreated: (row) => {
+										if (release.BuildNumber === currentBuildNumber) {
+											row.add_css_class("success");
+											row.title += ` ${_("(Current)")}`;
+										}
+										if (release.BuildNumber === defaultPageBuildNumber) {
+											ChangelogDialog.ChangelogPage(dialog, release);
+										}
+										group.add(row);
+									},
+								}),
+							),
+						)
+						.catch(log);
+				},
+			}),
+		],
+	});
+	dialog.height_request = 520;
+	return dialog;
 }
 export namespace ChangelogDialog {
 	export interface Options {
-		window: Adw.PreferencesWindow
-		currentBuildNumber: number
-		content: ()=>Promise<string>
-		defaultPageBuildNumber?: number
-		title?: string
-		subtitle?: string
+		window: Adw.PreferencesWindow;
+		currentBuildNumber: number;
+		content: () => Promise<string>;
+		defaultPageBuildNumber?: number;
+		title?: string;
+		subtitle?: string;
 	}
-	const BOLD = (t: string)=>`<span weight="bold">${t}</span>`
-	const LITEM = (t: string,lv: number)=>`${"　 ".repeat(lv)}<span alpha="70%">  •　</span>${t}`
-	const TITLE = (t: string,lv: number)=>`<span size="${100+((8-lv)*2.5)}%"><span alpha="50%">${"#".repeat(lv)} </span><span weight="bold">${t}</span></span>`
-	const QUOTE = (t: string)=>`<span size="90%" alpha="70%">&gt;　</span><span size="90%" alpha="75%">${t}</span>`
+	const BOLD = (t: string) => `<span weight="bold">${t}</span>`;
+	const LITEM = (t: string, lv: number) =>
+		`${"　 ".repeat(lv)}<span alpha="70%">  •　</span>${t}`;
+	const TITLE = (t: string, lv: number) =>
+		`<span size="${100 + (8 - lv) * 2.5}%"><span alpha="50%">${"#".repeat(lv)} </span><span weight="bold">${t}</span></span>`;
+	const QUOTE = (t: string) =>
+		`<span size="90%" alpha="70%">&gt;　</span><span size="90%" alpha="75%">${t}</span>`;
 	export function simpleMarked(mdlike: string): string {
-		return mdlike.split("\n").map(
-			line => line
-			.replaceAll(
-				/^( *)\-  *(.*)/g,
-				(_, indent, t: string)=>LITEM(t, Math.floor(indent.length/2))
+		return mdlike
+			.split("\n")
+			.map((line) =>
+				line
+					.replaceAll(/^( *)- +(.*)/g, (_, indent, t: string) =>
+						LITEM(t, Math.floor(indent.length / 2)),
+					)
+					.replaceAll(/^ *> +(.*)/g, (_, t: string) => QUOTE(t))
+					.replaceAll(/^ *(#*) +(.*)/g, (_, head: string, t: string) =>
+						TITLE(t, head.length),
+					)
+					.replaceAll(/\*\*(.*?)\*\*/g, (_, t: string) => BOLD(t))
+					.replaceAll(/<!--.*?-->/g, ""),
 			)
-			.replaceAll(
-				/^ *\>  *(.*)/g,
-				(_, t: string)=>QUOTE(t)
-			)
-			.replaceAll(
-				/^ *(\#*)  *(.*)/g,
-				(_, head: string, t: string)=>TITLE(t, head.length)
-			)
-			.replaceAll(
-				/\*\*(.*?)\*\*/g,
-				(_, t: string)=>BOLD(t)
-			)
-			.replaceAll(
-				/\<\!\-\-.*?\-\-\>/g,
-				""
-			)
-		).join("\n")
+			.join("\n");
 	}
 	export interface Release {
-		version: string
-		content: string
-		Includes: string[]
-		BuildNumber: number
-		Date: string
-		Git: string
+		version: string;
+		content: string;
+		Includes: string[];
+		BuildNumber: number;
+		Date: string;
+		Git: string;
 	}
 	export function createHeader(release: Partial<Release>): string {
 		return [
 			_("> **Date:** %s").format(release.Date ?? ""),
 			_("> **Git Hash:** %s").format(release.Git ?? ""),
 			_("> **Build Number:** %d").format(release.BuildNumber ?? 0),
-		].join("\n")
+		].join("\n");
 	}
 	export function getReleases(content: string): Release[] {
-		type Item = Partial<Release & { buffer: string[] }>
-		const releases: Item[] = []
-		let last: Item
+		type Item = Partial<Release & { buffer: string[] }>;
+		const releases: Item[] = [];
+		let last: Item;
 		for (const line of content.split("\n")) {
-			const version = line.match(/^#  *(.*) *$/)
+			const version = line.match(/^# +(.*) *$/);
 			if (version) {
-				releases.push(last = {
+				last = {
 					version: version[1],
 					buffer: [line],
-				})
-				continue
+				};
+				releases.push(last);
+				continue;
 			}
-			const meta = line.match("\<\!\-\-  *\@([^ ]*) *: *(.*?) *\-\-\>")
+			const meta = line.match("<!--  *@([^ ]*) *: *(.*?) *-->");
 			if (meta) {
-				last[meta[1]] = JSON.parse(meta[2])
-				continue
+				last[meta[1]] = JSON.parse(meta[2]);
+				continue;
 			}
-			if (!last) continue
-			last.buffer.push(line.replaceAll(/\{\{HEADER\}\}/g, ()=>createHeader(last)))
+			if (!last) continue;
+			last.buffer.push(
+				line.replaceAll(/\{\{HEADER\}\}/g, () => createHeader(last)),
+			);
 		}
 		for (const item of releases) {
-			item.content = item.buffer.join("\n")
-			delete item.buffer
+			item.content = item.buffer.join("\n");
+			delete item.buffer;
 		}
-		return releases as Release[]
+		return releases as Release[];
 	}
 	export function ChangelogPage(
 		dialog: Adw.PreferencesDialog,
@@ -1521,17 +1618,17 @@ export namespace ChangelogDialog {
 		return Dialog.StackedPage({
 			dialog,
 			title: release.version,
-			childrenRequest: ()=>[
-				Group({},[
+			childrenRequest: () => [
+				Group({}, [
 					new Gtk.Label({
 						use_markup: true,
 						label: ChangelogDialog.simpleMarked(release.content),
 						halign: Gtk.Align.START,
 						hexpand: true,
-					})
-				])
-			]
-		})
+					}),
+				]),
+			],
+		});
 	}
 }
 // #endregion ChangelogDialog
@@ -1543,84 +1640,92 @@ export function PaddingDialog({
 	bind,
 	window,
 }: PaddingDialog.Options) {
-	const getValue = ()=>
-		settings.get_value(bind).recursiveUnpack() as [number, number, number, number]
-	let current = getValue()
+	const getValue = () =>
+		settings.get_value(bind).recursiveUnpack() as [
+			number,
+			number,
+			number,
+			number,
+		];
+	let current = getValue();
 
-	let top: Adw.SpinRow, right: Adw.SpinRow, bottom: Adw.SpinRow, left: Adw.SpinRow
-	const save = ()=>{
-		if (deepEqual(current, getValue())) return
-		settings.set_value(bind, new GLib.Variant("ai", current))
-	}
+	let top: Adw.SpinRow,
+		right: Adw.SpinRow,
+		bottom: Adw.SpinRow,
+		left: Adw.SpinRow;
+	const save = () => {
+		if (deepEqual(current, getValue())) return;
+		settings.set_value(bind, new GLib.Variant("ai", current));
+	};
 	const dialog = Dialog({
 		window,
 		title: _("Padding"),
 		usePopup: true,
-		childrenRequest: ()=>[Group({
-		},[
+		childrenRequest: () => {
 			top = AdjustmentRow({
 				title: _("Top"),
 				max: 2048,
 				value: current[0],
-				action: (value: number)=>{
-					current[0] = value
-					save()
+				action: (value: number) => {
+					current[0] = value;
+					save();
 				},
 				settings,
 				sensitiveBind,
-			}),
+			});
 			bottom = AdjustmentRow({
 				title: _("Bottom"),
 				max: 2048,
 				value: current[2],
-				action: (value: number)=>{
-					current[2] = value
-					save()
+				action: (value: number) => {
+					current[2] = value;
+					save();
 				},
 				settings,
 				sensitiveBind,
-			}),
+			});
 			left = AdjustmentRow({
 				title: _("Left"),
 				max: 2048,
 				value: current[3],
-				action: (value: number)=>{
-					current[3] = value
-					save()
+				action: (value: number) => {
+					current[3] = value;
+					save();
 				},
 				settings,
 				sensitiveBind,
-			}),
+			});
 			right = AdjustmentRow({
 				title: _("Right"),
 				max: 2048,
 				value: current[1],
-				action: (value: number)=>{
-					current[1] = value
-					save()
+				action: (value: number) => {
+					current[1] = value;
+					save();
 				},
 				settings,
 				sensitiveBind,
-			}),
-		])],
-	})
-	const settingsConnection = settings.connect(`changed::${bind}`, ()=>{
-		current = getValue()
-		top.value = current[0]
-		right.value = current[1]
-		bottom.value = current[2]
-		left.value = current[3]
-	})
-	dialog.connect("destroy", ()=>{
-		settings.disconnect(settingsConnection)
-	})
+			});
+			return [Group({}, [top, bottom, left, right])];
+		},
+	});
+	const settingsConnection = settings.connect(`changed::${bind}`, () => {
+		current = getValue();
+		top.value = current[0];
+		right.value = current[1];
+		bottom.value = current[2];
+		left.value = current[3];
+	});
+	dialog.connect("destroy", () => {
+		settings.disconnect(settingsConnection);
+	});
 }
 export namespace PaddingDialog {
 	export interface Options {
-		settings: Gio.Settings
-		window: Adw.PreferencesWindow
-		sensitiveBind?: string
-		bind: string
+		settings: Gio.Settings;
+		window: Adw.PreferencesWindow;
+		sensitiveBind?: string;
+		bind: string;
 	}
 }
 // #endregion PaddingDialog

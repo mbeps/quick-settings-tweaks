@@ -2,67 +2,70 @@
 
 declare global {
 	export interface EasingParams {
-		repeatCount?: number
-		autoReverse?: boolean
-		animationRequired?: boolean
-		duration?: number
-		delay?: number
-		mode?: Clutter.AnimationMode | any
+		repeatCount?: number;
+		autoReverse?: boolean;
+		animationRequired?: boolean;
+		duration?: number;
+		delay?: number;
+		mode?: Clutter.AnimationMode | number;
 	}
-	export type EasingParamsWithProps = EasingParams & { [key: string]: any }
+	export type EasingParamsWithProps = EasingParams & {
+		[key: string]: unknown;
+	};
 }
 
 declare module "gi://GWeather" {
-	import GObject from "gi://GObject"
+	import GObject from "gi://GObject";
+
 	class Info extends GObject.Object {
-		static store_cache(): void
-		constructor(location: Location)
-		abort(): void
-		get_apparent(): string
+		static store_cache(): void;
+		constructor(location: Location);
+		abort(): void;
+		get_apparent(): string;
 		/// Get the application ID of the application fetching the weather
 		/** @returns { string } the application ID */
-		get_application_id(): string
+		get_application_id(): string;
 		/// Some weather services require the application showing the data to include an attribution text, possibly including links to the service website.
 		/// This must be shown prominently toghether with the data.
 		/** @returns { string } the required attribution text, in Pango markup form, or null if not required */
-		get_attribution(): string
-		get_conditions(): string
+		get_attribution(): string;
+		get_conditions(): string;
 		/// Get the contact information of the application fetching the weather.
 		/** @returns { string } the contact information */
-		get_contact_info(): string
-		get_dew(): string
+		get_contact_info(): string;
+		get_dew(): string;
 		/// Gets the bitmask of enabled GWeather.Provider weather providers.
-		get_enabled_providers(): Provider
+		get_enabled_providers(): Provider;
 		/**
 		 * @returns {Info[]}
 		 * list of GWeatherInfo* objects for the forecast.
 		 * The list is owned by the 'info' object thus is alive as long as the 'info'.
 		 * The 'update' property is the date/time when the forecast info is used for.
-		*/
-		get_forecast_list(): Info[]
-		get_humidity(): string
-		get_icon_name(): string
-		get_location(): Location
-		get_location_name(): string
-		get_pressure(): string
-		get_sky(): string
-		get_sunrise(): string
-		get_sunset(): string
-		get_symbolic_icon_name(): string
-		get_temp(): string
-		get_temp_max(): string
-		get_temp_min(): string
-		get_temp_summary(): string
-		get_upcoming_moonphases(phases: number): boolean
-		get_update(): string
+		 */
+		get_forecast_list(): Info[];
+		get_humidity(): string;
+		get_icon_name(): string;
+		get_location(): Location;
+		get_location_name(): string;
+		get_pressure(): string;
+		get_sky(): string;
+		get_sunrise(): string;
+		get_sunset(): string;
+		get_symbolic_icon_name(): string;
+		get_temp(): string;
+		get_temp_max(): string;
+		get_temp_min(): string;
+		get_temp_summary(): string;
+		get_upcoming_moonphases(phases: number): boolean;
+		get_update(): string;
 		/** @param { TemperatureUnit } unit the desired unit, as a GWeather.TemperatureUnit */
 		/**
 		 * @returns {[boolean, number]}
 		 * ok - TRUE is value is valid, FALSE otherwise
 		 *
 		 * value - the apparent temperature
-		*/
-		get_value_apparent(unit: TemperatureUnit): [boolean, number]
+		 */
+		get_value_apparent(unit: TemperatureUnit): [boolean, number];
 		/// Fills out phenomenon and qualifier with current weather conditions.
 		/**
 		 * @returns {[boolean, GWeather.ConditionPhenomenon, GWeather.ConditionQualifier]}
@@ -71,15 +74,15 @@ declare module "gi://GWeather" {
 		 * phenomenon - a location for a GWeather.ConditionPhenomenon.
 		 *
 		 * qualifier - a location for a GWeather.ConditionQualifier.
-		*/
-		get_value_conditions(): [boolean, ConditionPhenomenon, ConditionQualifier]
+		 */
+		get_value_conditions(): [boolean, ConditionPhenomenon, ConditionQualifier];
 		/**
 		 * @returns {[boolean, number]}
 		 * ok - TRUE is value is valid, FALSE otherwise.
 		 *
 		 * value - the dew point
-		*/
-		get_value_dew(unit: TemperatureUnit): [boolean, number]
+		 */
+		get_value_dew(unit: TemperatureUnit): [boolean, number];
 		/**
 		 * @returns {[boolean, MoonPhase, MoonLatitude]}
 		 * ok - TRUE is value is valid, FALSE otherwise.
@@ -87,77 +90,77 @@ declare module "gi://GWeather" {
 		 * value - the current moon phase
 		 *
 		 * lat - the moon declension
-		*/
-		get_value_moonphase(): [boolean, MoonPhase, MoonLatitude]
+		 */
+		get_value_moonphase(): [boolean, MoonPhase, MoonLatitude];
 		/** @param {PressureUnit} unit the desired unit, as a GWeather.PressureUnit */
 		/**
 		 * @returns {[boolean, number]}
 		 * ok - TRUE if value is valid, FALSE otherwise.
 		 *
 		 * value - forecasted pressure, expressed in unit
-		*/
-		get_value_pressure(unit): [boolean, number]
+		 */
+		get_value_pressure(unit): [boolean, number];
 		/**
 		 * @returns {[boolean, Sky]}
 		 * ok - TRUE is sky is valid, FALSE otherwise.
 		 *
 		 * sky - a location for a GWeather.Sky.
-		*/
-		get_value_sky(): [boolean, Sky]
+		 */
+		get_value_sky(): [boolean, Sky];
 		/**
 		 * @returns {[boolean, number]}
 		 * ok - TRUE is value is valid, FALSE otherwise.
 		 *
 		 * value - the time of sunrise
-		*/
-		get_value_sunrise(): [boolean, number]
+		 */
+		get_value_sunrise(): [boolean, number];
 		/**
 		 * @returns {[boolean, number]}
 		 * ok - TRUE is value is valid, FALSE otherwise.
 		 *
 		 * value - the time of sunset
-		*/
-		get_value_sunset(): [boolean, number]
+		 */
+		get_value_sunset(): [boolean, number];
 		/** @param {TemperatureUnit} unit the desired unit, as a GWeather.TemperatureUnit */
 		/**
 		 * @returns {[boolean, number]}
 		 * ok - TRUE is value is valid, FALSE otherwise.
 		 *
 		 * value - the temperature value
-		*/
-		get_value_temp(unit: TemperatureUnit): [boolean, number]
+		 */
+		get_value_temp(unit: TemperatureUnit): [boolean, number];
 		/** @param {GWeather.TemperatureUnit} unit the desired unit, as a GWeather.TemperatureUnit */
 		/**
 		 * @returns {[boolean, number]}
 		 * ok - TRUE is value is valid, FALSE otherwise.
 		 *
 		 * value - the maximum temperature value
-		*/
-		get_value_temp_max(unit: TemperatureUnit): [boolean, number]
+		 */
+		get_value_temp_max(unit: TemperatureUnit): [boolean, number];
 		/** @param {GWeather.TemperatureUnit} unit the desired unit, as a GWeather.TemperatureUnit */
 		/**
 		 * @returns {[boolean, number]}
 		 * ok - TRUE is value is valid, FALSE otherwise.
 		 *
 		 * value - the minimum temperature value
-		*/
-		get_value_temp_min(unit: TemperatureUnit): [boolean, number]
+		 */
+		get_value_temp_min(unit: TemperatureUnit): [boolean, number];
 		/// Note that value may be 0 if this has not yet been updated.
 		/**
 		 * @returns {[boolean, number]}
 		 * ok - TRUE is value is valid, FALSE otherwise.
 		 *
 		 * value - the time this was last updated
-		*/
-		get_value_update(): [boolean, number]
+		 */
+		get_value_update(): [boolean, number];
 		/** @param {GWeather.DistanceUnit} unit the desired unit, as a GWeather.DistanceUnit */
 		/**
 		 * @returns {[boolean, number]}
 		 * ok - TRUE if value is valid, FALSE otherwise.
 		 *
 		 * value - forecasted visibility, expressed in unit
-		*/
-		get_value_visibility(unit: DistanceUnit): [boolean, number]
+		 */
+		get_value_visibility(unit: DistanceUnit): [boolean, number];
 		/** @param {GWeather.SpeedUnit} unit the desired unit, as a GWeather.SpeedUnit */
 		/**
 		 * @returns {[boolean, number, GWeather.WindDirection]}
@@ -166,22 +169,22 @@ declare module "gi://GWeather" {
 		 * speed - forecasted wind speed
 		 *
 		 * direction - forecasted wind direction
-		*/
-		get_value_wind(unit: SpeedUnit): [boolean, number, WindDirection]
-		get_visibility(): string
+		 */
+		get_value_wind(unit: SpeedUnit): [boolean, number, WindDirection];
+		get_visibility(): string;
 		/** @returns {string} a summary for current weather conditions. */
-		get_weather_summary(): string
-		get_wind(): string
+		get_weather_summary(): string;
+		get_wind(): string;
 		/**
 		 * @returns {boolean}
 		 * Whether it is daytime (that is, if the sun is visible) or not at the location and the point of time referred by this.
 		 *
 		 * This is mostly equivalent to comparing the return value of GWeather.Info.get_value_sunrise and GWeather.Info.get_value_sunset, but it accounts also for midnight sun and polar night, for locations within the Artic and Antartic circles.
-		*/
-		is_daytime(): boolean
-		is_valid(): boolean
-		network_error(): boolean
-		next_sun_event(): number
+		 */
+		is_daytime(): boolean;
+		is_valid(): boolean;
+		network_error(): boolean;
+		next_sun_event(): number;
 		/// Sets the application ID of the application fetching the weather.
 		/// It is a requirement for using any of the online weather providers.
 		///
@@ -194,25 +197,25 @@ declare module "gi://GWeather" {
 		///
 		/// The contact information should be an email address, or the full URL to an online contact form which weather providers can use to contact the application developer. Avoid using bug tracker URLs which require creating accounts.
 		/** @param {string} contact_info the contact information for the application */
-		set_contact_info(contact_info: string): void
+		set_contact_info(contact_info: string): void;
 
 		/// Sets the enabled providers for fetching the weather.
 		/// Note that it is up to the application developer to make sure that the terms of use for each service are respected.
 		///
 		/// Online providers will not be enabled if the application ID is not set to a valid value.
 		/** @param {GWeather.Provider} providers a bitmask of GWeather.Provider */
-		set_enabled_providers(providers: Provider): void
+		set_enabled_providers(providers: Provider): void;
 
 		/// Changes the location of the weather report.
 		///
 		/// Note that this will clear any forecast or current conditions, and you must call [method@GWeather.Info.update] to obtain the new data.
 		/** @param {GWeather.Location} location a location for which weather is desired */
-		set_location(location: Location): void
+		set_location(location: Location): void;
 
 		/// Requests a reload of weather conditions and forecast data from enabled network services.
 		/// This call does no synchronous IO: rather, the result is delivered by emitting the GWeather.Info.updated signal.
 		/// Note that if no network services are enabled, the signal will not be emitted. See GWeather.Info.enabled-providers for details.
-		update(): void
+		update(): void;
 	}
 	/// A GWeatherLocation represents a "location" of some type known to libgweather; anything from a single weather station to the entire world.
 	///
@@ -299,7 +302,7 @@ declare module "gi://GWeather" {
 		/// Returns the location level as a string, useful for debugging purposes.
 		/** @param {GWeather.LocationLevel} level a GWeather.LocationLevel */
 		/** @returns {string} a string */
-		export function to_string(level: LocationLevel): string
+		export function to_string(level: LocationLevel): string;
 	}
 	/// The measure unit to use for atmospheric pressure values, when retrieved by GWeather.Info.get_value_pressure.
 	enum PressureUnit {
@@ -333,8 +336,11 @@ declare module "gi://GWeather" {
 		SCATTERED,
 	}
 	namespace Sky {
-		export function to_string(sky: Sky): string
-		export function to_string_full(sky: Sky, options: {[key: string]: any}): string
+		export function to_string(sky: Sky): string;
+		export function to_string_full(
+			sky: Sky,
+			options: { [key: string]: unknown },
+		): string;
 	}
 
 	/// The measure unit to use for wind speed values, when retrieved by GWeather.Info.get_value_wind.
@@ -349,7 +355,7 @@ declare module "gi://GWeather" {
 	}
 	namespace SpeedUnit {
 		/** @param {GWeather.SpeedUnit} unit a speed unit, or GWeather.SpeedUnit.DEFAULT */
-		export function to_string(unit: SpeedUnit): string
+		export function to_string(unit: SpeedUnit): string;
 	}
 
 	/// The measure unit to use for temperature values, when retrieved by the GWeather.Info.get_value_temp family of functions.
@@ -361,8 +367,8 @@ declare module "gi://GWeather" {
 		KELVIN,
 	}
 	namespace TemperatureUnit {
-        /** @param {GWeather.TemperatureUnit} unit a tempeature unit, or GWeather.TemperatureUnit.DEFAULT */
-		export function to_real(unit: TemperatureUnit): TemperatureUnit
+		/** @param {GWeather.TemperatureUnit} unit a tempeature unit, or GWeather.TemperatureUnit.DEFAULT */
+		export function to_real(unit: TemperatureUnit): TemperatureUnit;
 	}
 
 	/// The direction of the prevailing wind.
@@ -389,36 +395,45 @@ declare module "gi://GWeather" {
 		WSW,
 	}
 	namespace WindDirection {
-		export function to_string(wind: WindDirection): string
-		export function to_string_full(wind: WindDirection, options: {[key: string]: any}): string
+		export function to_string(wind: WindDirection): string;
+		export function to_string_full(
+			wind: WindDirection,
+			options: { [key: string]: unknown },
+		): string;
 	}
 }
 
 declare module "resource:///org/gnome/shell/ui/pageIndicators.js" {
-	import St from "gi://St"
-	import Clutter from "gi://Clutter"
+	import Clutter from "gi://Clutter";
+	import St from "gi://St";
 	export class PageIndicators extends St.BoxLayout {
-		constructor(orientation: Clutter.Orientation)
-		connect(id: string, callback: (...args: any[]) => any): number;
-		connect_after(id: string, callback: (...args: any[]) => any): number;
-		connect(sigName: 'page-activated', callback: ($obj: PageIndicators, page: number) => void): number
-		connect_after(sigName: 'page-activated', callback: ($obj: PageIndicators, page: number) => void): number
-		setReactive(reactive: boolean): void
-		setNPages(nPages: number): void
-		setCurrentPosition(currentPosition: number): void
-		readonly nPages: number
+		constructor(orientation: Clutter.Orientation);
+		connect(id: string, callback: (...args: never[]) => unknown): number;
+		connect(
+			sigName: "page-activated",
+			callback: ($obj: PageIndicators, page: number) => void,
+		): number;
+		connect_after(id: string, callback: (...args: never[]) => unknown): number;
+		connect_after(
+			sigName: "page-activated",
+			callback: ($obj: PageIndicators, page: number) => void,
+		): number;
+		setReactive(reactive: boolean): void;
+		setNPages(nPages: number): void;
+		setCurrentPosition(currentPosition: number): void;
+		readonly nPages: number;
 	}
 }
 
 declare module "resource:///org/gnome/shell/misc/weather.js" {
-	import Signals from "resource:///org/gnome/shell/misc/signals.js"
-	import GWeather from "gi://GWeather"
+	import GWeather from "gi://GWeather";
+	import Signals from "resource:///org/gnome/shell/misc/signals.js";
 	export class WeatherClient extends Signals.EventEmitter {
-		readonly available: boolean
-		readonly loading: boolean
-		readonly hasLocation: boolean
-		readonly info: GWeather.Info
-		activateApp(): void
-		update(): void
+		readonly available: boolean;
+		readonly loading: boolean;
+		readonly hasLocation: boolean;
+		readonly info: GWeather.Info;
+		activateApp(): void;
+		update(): void;
 	}
 }
