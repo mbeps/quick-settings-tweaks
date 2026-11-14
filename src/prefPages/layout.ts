@@ -446,7 +446,6 @@ class ToggleOrderInfo extends OrderInfo<ToggleOrderItem> {
 			["RfkillToggle", IGNORE_XGETTEXT("Airplane Mode")],
 			["RotationToggle", IGNORE_XGETTEXT("Auto Rotate")],
 			["DoNotDisturbToggle", _("Do Not Disturb")],
-			["UnsafeQuickToggle", _("Unsafe Mode")],
 		]);
 	}
 	getSystemIcons(): Map<string, string> {
@@ -464,7 +463,6 @@ class ToggleOrderInfo extends OrderInfo<ToggleOrderItem> {
 			["RfkillToggle", "airplane-mode-symbolic"],
 			["RotationToggle", "object-rotate-right"],
 			["DoNotDisturbToggle", "notifications-disabled-symbolic"],
-			["UnsafeQuickToggle", "channel-secure-symbolic"],
 		]);
 	}
 	getListFromSettings(): ToggleOrderItem[] {
@@ -514,9 +512,8 @@ class ToggleOrderInfo extends OrderInfo<ToggleOrderItem> {
 			);
 		return "";
 	}
-	canHide(item: ToggleOrderItem): boolean {
-		if (!item.isSystem) return true;
-		return item.constructorName !== "UnsafeQuickToggle";
+	canHide(_item: ToggleOrderItem): boolean {
+		return true;
 	}
 	canEdit(item: ToggleOrderItem): boolean {
 		return !item.isSystem && !item.nonOrdered;
@@ -527,10 +524,7 @@ class ToggleOrderInfo extends OrderInfo<ToggleOrderItem> {
 	create(friendlyName: string): ToggleOrderItem {
 		return ToggleOrderItem.create(friendlyName);
 	}
-	shouldShow(item: ToggleOrderItem): boolean {
-		if (item.constructorName === "UnsafeQuickToggle") {
-			return this.settings.get_boolean("unsafe-quick-toggle-enabled");
-		}
+	shouldShow(_item: ToggleOrderItem): boolean {
 		return true;
 	}
 }
@@ -1006,41 +1000,6 @@ export const LayoutPage = GObject.registerClass(
 						dialogTitle: _("Adjust system items layout"),
 						experimental: true,
 						childrenRequest: (page) => [SystemItemOrderGroup(settings, page)],
-					}),
-				],
-			);
-
-			// DateMenu
-			Group(
-				{
-					parent: this,
-					title: _("Date Menu"),
-					description: _("Adjust Date Menu layout"),
-				},
-				[
-					SwitchRow({
-						settings,
-						title: _("Hide left box"),
-						subtitle: _(
-							"Hide the left box of the date menu, which contains notifications and media control",
-						),
-						bind: "datemenu-hide-left-box",
-					}),
-					SwitchRow({
-						settings,
-						title: _("Hide right box"),
-						subtitle: _(
-							"Hide the right box of the date menu, which contains calendar, world clock and weather",
-						),
-						bind: "datemenu-hide-right-box",
-					}),
-					SwitchRow({
-						settings,
-						title: _("Disable menu"),
-						subtitle: _(
-							"Do not open date menu when the date menu button clicked",
-						),
-						bind: "datemenu-disable-menu",
 					}),
 				],
 			);

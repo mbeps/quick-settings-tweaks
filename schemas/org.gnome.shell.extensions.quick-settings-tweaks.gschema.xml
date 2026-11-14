@@ -13,36 +13,6 @@
     </key>
     <!-- #endregion Debug -->
 
-    <!-- #region Notifications Widget -->
-    <key name="notifications-enabled" type="b">
-      <default>true</default>
-    </key>
-    <key name="notifications-show-header" type="b">
-      <default>true</default>
-    </key>
-    <key name="notifications-use-native-controls" type="b">
-      <default>false</default>
-    </key>
-    <key name="notifications-compact" type="b">
-      <default>true</default>
-    </key>
-    <key name="notifications-autohide" type="b">
-      <default>true</default>
-    </key>
-    <key name="notifications-max-height" type="i">
-      <default>292</default>
-    </key>
-    <key name="notifications-fade-offset" type="i">
-      <default>46</default>
-    </key>
-    <key name="notifications-remove-shadow" type="b">
-      <default>true</default>
-    </key>
-    <key name="notifications-show-scrollbar" type="b">
-      <default>true</default>
-    </key>
-    <!-- #endregion Notifications Widget -->
-
     <!-- #region Media Widget -->
     <key name="media-enabled" type="b">
       <default>true</default>
@@ -125,33 +95,6 @@
     </key>
     <!-- use paged layout type=b -->
     <!-- #endregion Media Widget -->
-
-    <!-- #region Weather Widget -->
-    <key name="weather-show-header" type="b">
-      <default>true</default>
-    </key>
-    <key name="weather-enabled" type="b">
-      <default>false</default>
-    </key>
-    <key name="weather-remove-shadow" type="b">
-      <default>true</default>
-    </key>
-    <key name="weather-compact" type="b">
-      <default>true</default>
-    </key>
-    <key name="weather-click-command" type="s">
-      <default>''</default>
-    </key>
-    <key name="weather-show-location" type="b">
-      <default>true</default>
-    </key>
-    <key name="weather-max-forecasts" type="i">
-      <default>5</default>
-    </key>
-    <key name="weather-interval-hour" type="i">
-      <default>1</default>
-    </key>
-    <!-- #endregion Weather Widget -->
 
     <!-- #region Volume Mixer Widget -->
     <key name="volume-mixer-enabled" type="b">
@@ -252,18 +195,6 @@
       <default>true</default>
     </key>
     <!-- #endregion Volume Mixer Widget -->
-
-    <!-- #region Date Menu Layout -->
-    <key name="datemenu-hide-left-box" type="b">
-      <default>true</default>
-    </key>
-    <key name="datemenu-hide-right-box" type="b">
-      <default>false</default>
-    </key>
-    <key name="datemenu-disable-menu" type="b">
-      <default>false</default>
-    </key>
-    <!-- #endregion Date Menu Layout -->
 
     <!-- #region System Items Layout -->
     <key name="system-items-layout-enabled" type="b">
@@ -381,7 +312,6 @@
           { 'hide': <false>, 'isSystem': <true>, 'constructorName': <'RfkillToggle'> },
           { 'hide': <false>, 'isSystem': <true>, 'constructorName': <'RotationToggle'> },
           { 'hide': <false>, 'isSystem': <true>, 'constructorName': <'DndQuickToggle'> },
-          { 'hide': <false>, 'isSystem': <true>, 'constructorName': <'UnsafeQuickToggle'> },
           { 'nonOrdered': <true>, 'hide': <false> }
         ]
       ]]></default>
@@ -398,18 +328,6 @@
       ]]></description>
     </key>
     <!-- #endregion Quick Toggle Layout -->
-
-    <!-- #region Unsafe Mode Quick Toggle -->
-    <key name="unsafe-quick-toggle-enabled" type="b">
-      <default>false</default>
-    </key>
-    <key name="unsafe-quick-toggle-last-state" type="b">
-      <default>false</default>
-    </key>
-    <key name="unsafe-quick-toggle-save-last-state" type="b">
-      <default>true</default>
-    </key>
-    <!-- #endregion Unsafe Mode Quick Toggle -->
 
     <!-- #region Menu Animation -->
     <key name="menu-animation-enabled" type="b">
@@ -461,8 +379,6 @@
     <key name="layout" type="a{sai}">
       <default>
         {
-          'weather-widget': [0, 0],
-          'notifications-widget': [0, 0],
           'media-widget': [0, 0],
           'mixer-widget': [0, 0]
         }

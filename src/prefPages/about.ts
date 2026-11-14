@@ -122,18 +122,6 @@ export const AboutPage = GObject.registerClass(
 				},
 				[
 					Row({
-						uri: "https://github.com/sponsors/qwreey",
-						title: _("Donate via github sponsors"),
-						subtitle: _("Support development!"),
-						icon: "emblem-favorite-symbolic",
-					}),
-					Row({
-						uri: "https://extensions.gnome.org/extension/5446/quick-settings-tweaker/",
-						title: "Gnome Extension",
-						subtitle: _("Rate and comment the extension!"),
-						icon: "qst-gnome-extension-logo-symbolic",
-					}),
-					Row({
 						uri: "https://github.com/mbeps/quick-settings-tweaks",
 						title: _("mbeps Fork (this build)"),
 						subtitle: _(

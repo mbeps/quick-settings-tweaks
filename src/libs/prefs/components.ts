@@ -1256,6 +1256,7 @@ export namespace DropdownRow {
 	}
 	export const Items = GObject.registerClass(
 		{
+			GTypeName: "offx1-pref-components-DropdownItems",
 			Properties: {
 				name: GObject.ParamSpec.string(
 					"name",

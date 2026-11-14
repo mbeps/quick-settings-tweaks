@@ -7,17 +7,13 @@
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
 import Config from "./config.js";
 import { DebugFeature } from "./features/debug.js";
-import { DateMenuLayoutFeature } from "./features/layout/dateMenu.js";
 import { SystemIndicatorLayoutFeature } from "./features/layout/systemIndicator.js";
 import { SystemItemsLayoutFeature } from "./features/layout/systemItems.js";
 import { TogglesLayoutFeature } from "./features/layout/toggles.js";
 import { MenuAnimation } from "./features/menuAnimation.js";
 import { OverlayMenu } from "./features/overlayMenu.js";
-import { UnsafeQuickToggleFeature } from "./features/toggle/unsafeQuickToggle.js";
 import { MediaWidgetFeature } from "./features/widget/media.js";
-import { NotificationsWidgetFeature } from "./features/widget/notifications.js";
 import { VolumeMixerWidgetFeature } from "./features/widget/volumeMixer.js";
-import { WeatherWidgetFeature } from "./features/widget/weather.js";
 import Global from "./global.js";
 import Logger from "./libs/shared/logger.js";
 import type { FeatureBase } from "./libs/shell/feature.js";
@@ -53,13 +49,9 @@ export default class QstExtension extends Extension {
 
 		// Create features
 		this.features = [
-			new UnsafeQuickToggleFeature(),
 			// new InputOutputFeature(),
-			new NotificationsWidgetFeature(),
 			new MediaWidgetFeature(),
 			new VolumeMixerWidgetFeature(),
-			new DateMenuLayoutFeature(),
-			new WeatherWidgetFeature(),
 			new OverlayMenu(),
 			new MenuAnimation(),
 			new SystemItemsLayoutFeature(),

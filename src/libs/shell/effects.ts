@@ -1,6 +1,7 @@
 import Clutter from "gi://Clutter";
 import Cogl from "gi://Cogl";
 import GObject from "gi://GObject";
+import Config from "../../config.js";
 import Global from "../../global.js";
 
 // #region RoundClipEffect
@@ -96,5 +97,8 @@ export class RoundClipEffect extends Clutter.ShaderEffect {
 		this.queue_repaint();
 	}
 }
-GObject.registerClass(RoundClipEffect);
+GObject.registerClass(
+	{ GTypeName: `${Config.baseGTypeName}RoundClipEffect` },
+	RoundClipEffect,
+);
 // #endregion RoundClipEffect

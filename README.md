@@ -1,15 +1,13 @@
 # Quick Settings Tweaks
 
-Quick Settings Tweaks is a GNOME Shell extension that customises the Quick Settings panel. It adds media controls, notifications, a volume mixer, and weather widgets to the menu. Users can also reorder or hide toggles, restyle the date menu, and enable an overlay layout.
+Quick Settings Tweaks is a GNOME Shell extension that customises the Quick Settings panel. It adds media controls and a volume mixer to the menu. Users can also reorder or hide toggles, restyle the date menu, and enable an overlay layout.
 
 # Features
 
 ## Widgets
 
 - Add media controls to the Quick Settings menu
-- Display notifications directly inside Quick Settings
 - Control per-application audio streams with a volume mixer
-- Show current weather conditions and forecasts
 
 ## Layout
 
