@@ -1,80 +1,94 @@
-> ### Off by One fork
->
-> This is a community-maintained fork of **[qwreey/quick-settings-tweaks](https://github.com/qwreey/quick-settings-tweaks)**, consolidating open compatibility and bug-fix pull requests that upstream has not merged — most importantly **GNOME 50 support**. Maintained by **Off by One, Inc.** ([@jstockdale](https://github.com/jstockdale)).
->
-> The original extension, and the overwhelming majority of the code, is by **qwreey**. Each integrated fix is credited to its author in **[CREDITS.md](CREDITS.md)**, with original commit authorship preserved in the git history. Licensed under LGPL-3.0-or-later, same as upstream.
+# Quick Settings Tweaks
 
----
+Quick Settings Tweaks is a GNOME Shell extension that customises the Quick Settings panel. It adds media controls, notifications, a volume mixer, and weather widgets to the menu. Users can also reorder or hide toggles, restyle the date menu, and enable an overlay layout.
 
-# Quick Settings Tweaks [<img src=".github/images/quick-settings-tweaker.png" width="200px" align="right" alt="QuickSettings-Tweaker SkeletonUI">](https://github.com/jstockdale/quick-settings-tweaks)
+# Features
 
-<div align="center">
+## Widgets
 
-### Let's tweak Gnome Quick Settings!
+- Add media controls to the Quick Settings menu
+- Display notifications directly inside Quick Settings
+- Control per-application audio streams with a volume mixer
+- Show current weather conditions and forecasts
 
-[<img src="https://img.shields.io/github/v/release/jstockdale/quick-settings-tweaks?style=for-the-badge&label=Download%20latest%20release&color=4a86cf" alt="Download the latest release" height="40" align="middle">](https://github.com/jstockdale/quick-settings-tweaks/releases/latest)
-<br>
-<br>
-Quick Settings Tweaker is a Gnome 46+ extension which allows you to customize the new Quick Settings Panel to your liking!
+## Layout
 
-</div>
-<br>
-<br>
+- Enable an overlay layout for the Quick Settings panel
+- Restyle the date menu and adjust menu animations
+- Reorder widgets and sections within the panel
 
-## Features
+## Quick Toggles
 
-| <p align="center">With this extension, you can...</p> | How it will appear |
-|:-------------------------------|:--------------------:|
-| <p align="center">**Add the Media Controls Widget**</p><p align="center">Control your music and videos directly from the Quick Settings, instead of the Date Menu.<br><br>For a cooler look, you can also get colors from the cover image and create a gradient.</p> | <img src=".github/images/media-control.png" width="600px" alt="Media controls widget screenshot"> |
-| <p align="center">**Add the Volume Mixer Widget**</p><p align="center">Adjust application volumes, without opening extra application.<br><br>Place the menu button next to the output slider for a compact and natural layout.</p> | <img src=".github/images/volume-mixer.png" width="600px" alt="Volume mixer widget screenshot"> |
-| <p align="center">**Add the Notifications Widget**</p><p align="center">You can check what has been sent to your mailbox or messenger, without missing!</p> | <img src=".github/images/notifications.png" width="600px" alt="Notifications widget screenshot"> |
-| <p align="center">**Layout customize**</p><p align="center">Hide, re-order, re-color your panel and Quick Settings layout<br><br>Make it simple and keep organized!</p> | <img src=".github/images/layout.png" width="600px" alt="Notifications widget screenshot"> |
-| <p align="center">**Overlay menu layout**</p><p align="center">Your Quick Settings panel is too big?<br><br>Try overlay layout! you can customize background and animation style too.</p> | <img src=".github/images/overlay.png" width="600px" alt="Notifications widget screenshot"> |
+- Reorder existing Quick Settings toggles
+- Hide unused or unwanted toggles from the menu
+- Add custom toggles for quick actions
 
-## Sponsor
+# Requirements
 
-You can promote and support development by [github sponsor!](https://github.com/sponsors/qwreey) You can help keep this project maintained
+- GNOME Shell 48, 49, or 50
+- Node.js 18 or higher
+- `glib-compile-schemas` and `gnome-extensions` CLI
+- `gettext` (Optional, for updating translations)
+- Docker (Optional, for running the development container)
 
-Here is my sponsors, thank for your support!
+# Stack
 
-[![sponsors](https://readme-contribs.as93.net/sponsors/qwreey?shape=square&margin=16&perRow=15&title=Qwreey's%20Sponsors&textColor=f5acff&backgroundColor=0e001a&fontFamily=cursive&fontSize=14&limit=90&footerText=none&outerBorderRadius=24)](https://github.com/sponsors/qwreey)
+## Extension
 
-## Stars
+- [TypeScript](https://www.typescriptlang.org/docs/): Typed superset of JavaScript compiled to ESM for GNOME Shell.
+- [GJS](https://gjs.guide/): GNOME JavaScript runtime providing bindings to Clutter, St, Gio, GLib, and GObject.
+- [Adwaita](https://gnome.pages.gitlab.gnome.org/libadwaita-docs/): UI library used for the GTK4 preferences window.
+- [GSettings](https://docs.gtk.org/gio/class.Settings.html): Configuration storage system backed by compiled XML schemas.
 
-[![Star History Chart](https://api.star-history.com/svg?repos=qwreey/quick-settings-tweaks&type=Date)](https://star-history.com/#qwreey/quick-settings-tweaks&Date)
+## Tooling
 
-## Development
+- [Sass](https://sass-lang.com/documentation/): CSS preprocessor used to compile extension stylesheets.
+- [gettext](https://www.gnu.org/software/gettext/manual/gettext.html): Internationalisation toolkit used to extract and compile translation files.
 
-### Building
+# Setting Up Project
 
-> Prerequirements: You need to install nodejs, bash, and gnome-shell for compiling extension from source
+## 1. Clone the Project Locally
 
-You can create development build by executing `TARGET=dev ./install.sh create-release`. make sure run `npm i` first to ensure all build dependencies installed
+```bash
+git clone https://github.com/mbeps/quick-settings-tweaks.git
+cd quick-settings-tweaks
+```
 
-Or, you can get nightly preview build from [github releases tab](https://github.com/qwreey/quick-settings-tweaks/releases). Build extension from `dev` branch is not encouraged, because the `dev` branch has unchecked bleeding-edge features not guaranteed to work. github-preview build is tested by developer and much stable than building `dev` branch.
+## 2. Install Dependencies
 
-### Contribution and Issues
+```bash
+npm install
+```
 
-Keep in mind that there may be one or a few developers, but there may be many issues and users. I think you know how to behave with manners without even having to say it.
+## 3. Build and Install the Extension
 
-Please check github [project board page](https://github.com/users/qwreey/projects/2) for issue priority and progress.
+```bash
+bash install.sh install
+```
 
-#### Raise an issue
+# Run Application
 
-If you want to raise an issue, First, **you must search your issue first.** duplicated issue will be closed, and disturb developer's time.
+Install and enable the extension in your current GNOME session:
 
-Second, **you must attach a related log files, gnome version and extension version informations.** if you don't provide information much about your issue, it is hard to solve your issue. and to be clear, Please use `[migration]`, `[feature]`, `[bug]` prefix for issue title, It is very useful for searching and organizing issues
+```bash
+bash install.sh install-enable
+```
 
-And last, **you must use well-formed english** You can use a translator or AI to write it, so avoid wasting time by having the developer translate and take notes. This takes up a surprising amount of the developer's time, making analysis very difficult, especially if the logs are mixed in English and other languages.
+Alternatively, you can build the distributable `.shell-extension.zip` package using the following command:
 
-#### PR and code contribution
+```bash
+bash install.sh build
+```
 
-If you want to contribute, **you must pull `dev` branch, Not master branch.** master branch is release branch, because AUR and some user distributions use master branch as build source. **If you create pull-request to master branch, it will be closed.** you should re-open PR to dev branch.
+To view live extension logs during development:
 
-### Testing
+```bash
+bash install.sh log
+```
 
-![gnome-docker devlopment screenshot](.github/images/dev-preview.png)
+# References
 
-You can test extension with command `./install.sh dev`. You will need tigervnc client and docker in host. Tested in arch linux but it should working on any systemd based platform
-
-You can re-build extension by log out and close vnc window or send SIGINT to exit dev docker.
+- [GNOME Shell Extensions Guide](https://gjs.guide/extensions/) 
+- [GJS Documentation](https://gjs.guide/guides/) 
+- [Libadwaita Documentation](https://gnome.pages.gitlab.gnome.org/libadwaita-docs/) 
+- [GNOME Shell Source](https://gitlab.gnome.org/GNOME/gnome-shell)
