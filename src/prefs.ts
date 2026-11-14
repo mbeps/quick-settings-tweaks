@@ -11,10 +11,9 @@ import type { ContributorsRow, LicenseRow } from "./libs/prefs/components.js";
 import { AboutPage } from "./prefPages/about.js";
 import { LayoutPage } from "./prefPages/layout.js";
 import { MenuPage } from "./prefPages/menu.js";
-import { TogglesPage } from "./prefPages/toggles.js";
 import { WidgetsPage } from "./prefPages/widgets.js";
 
-var pageList = [WidgetsPage, TogglesPage, LayoutPage, MenuPage, AboutPage];
+var pageList = [WidgetsPage, LayoutPage, MenuPage, AboutPage];
 
 export default class QstExtensionPreferences extends ExtensionPreferences {
 	appendIconPath(path: string) {
