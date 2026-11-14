@@ -115,9 +115,9 @@ export const AboutPage = GObject.registerClass({
 				icon: "qst-gnome-extension-logo-symbolic",
 			}),
 			Row({
-				uri: "https://github.com/jstockdale/quick-settings-tweaks",
-				title: _("Off by One Fork (this build)"),
-				subtitle: _("GNOME 50 fork maintained by Off by One, Inc. — consolidates upstream community fixes. Star it if it helps!"),
+				uri: "https://github.com/mbeps/quick-settings-tweaks",
+				title: _("mbeps Fork (this build)"),
+				subtitle: _("GNOME 50 fork maintained by Maruf Bepary — consolidates upstream community fixes. Star it if it helps!"),
 				icon: "qst-github-logo-symbolic",
 			}),
 			Row({

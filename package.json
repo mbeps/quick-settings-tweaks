@@ -1,10 +1,11 @@
 {
   "name": "quick-settings-tweaks",
-  "description": "A TypeScript GNOME Extension — Off by One fork of qwreey/quick-settings-tweaks",
+  "description": "GNOME Shell extension to tweak the Quick Settings menu",
   "version": "0.0.0",
   "author": {
-    "name": "Off by One, Inc.",
-    "url": "https://offx1.com"
+    "name": "Maruf Bepary",
+    "email": "maruf.h.bepary@gmail.com",
+    "url": "https://github.com/mbeps"
   },
   "contributors": [
     { "name": "qwreey (original author)", "email": "me@qwreey.moe", "url": "https://github.com/qwreey" },
@@ -18,14 +19,14 @@
   "type": "module",
   "sideEffects": false,
   "license": "LGPL-3.0-or-later",
-  "homepage": "https://github.com/jstockdale/quick-settings-tweaks#readme",
+  "homepage": "https://github.com/mbeps/quick-settings-tweaks#readme",
   "private": true,
   "bugs": {
-    "url": "https://github.com/jstockdale/quick-settings-tweaks/issues"
+    "url": "https://github.com/mbeps/quick-settings-tweaks/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jstockdale/quick-settings-tweaks.git"
+    "url": "git+https://github.com/mbeps/quick-settings-tweaks.git"
   },
   "devDependencies": {
     "sass": "^1.83.4",
