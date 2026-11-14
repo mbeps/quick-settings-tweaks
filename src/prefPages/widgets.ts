@@ -344,68 +344,6 @@ export const WidgetsPage = GObject.registerClass(
 				],
 			);
 
-			// weather
-			Group(
-				{
-					parent: this,
-					title: _("Weather Widget"),
-					headerSuffix: SwitchRow({
-						settings,
-						bind: "weather-enabled",
-					}),
-					description: _(
-						"Turn on to make the weather widget visible on the Quick Settings panel",
-					),
-				},
-				[
-					SwitchRow({
-						settings,
-						title: _("Compact mode"),
-						subtitle: _("Make weather widget smaller"),
-						bind: "weather-compact",
-						sensitiveBind: "weather-enabled",
-					}),
-					SwitchRow({
-						settings,
-						title: _("Remove shadow"),
-						subtitle: _(
-							"Remove shadow from weather widget\nUse if your theme creates unnecessary shadows",
-						),
-						bind: "weather-remove-shadow",
-						sensitiveBind: "weather-enabled",
-					}),
-					EntryRow({
-						settings,
-						title: _("Click command"),
-						bind: "weather-click-command",
-						sensitiveBind: "weather-enabled",
-					}),
-					SwitchRow({
-						settings,
-						title: _("Show location"),
-						subtitle: _("Show the location label on header"),
-						bind: "weather-show-location",
-						sensitiveBind: "weather-enabled",
-					}),
-					AdjustmentRow({
-						settings,
-						max: 1024,
-						min: 1,
-						bind: "weather-interval-hour",
-						title: _("Forecast interval"),
-						subtitle: _("Adjust forecast interval in hour"),
-					}),
-					AdjustmentRow({
-						settings,
-						max: 12,
-						min: 0,
-						bind: "weather-max-forecasts",
-						title: _("Max forecasts"),
-						subtitle: _("Adjust max forecasts"),
-					}),
-				],
-			);
-
 			// volume mixer
 			Group(
 				{
