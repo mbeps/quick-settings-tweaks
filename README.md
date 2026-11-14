@@ -57,7 +57,7 @@ cd quick-settings-tweaks
 ## 2. Install Dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## 3. Build and Install the Extension
