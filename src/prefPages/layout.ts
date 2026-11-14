@@ -1003,41 +1003,6 @@ export const LayoutPage = GObject.registerClass(
 					}),
 				],
 			);
-
-			// DateMenu
-			Group(
-				{
-					parent: this,
-					title: _("Date Menu"),
-					description: _("Adjust Date Menu layout"),
-				},
-				[
-					SwitchRow({
-						settings,
-						title: _("Hide left box"),
-						subtitle: _(
-							"Hide the left box of the date menu, which contains notifications and media control",
-						),
-						bind: "datemenu-hide-left-box",
-					}),
-					SwitchRow({
-						settings,
-						title: _("Hide right box"),
-						subtitle: _(
-							"Hide the right box of the date menu, which contains calendar, world clock and weather",
-						),
-						bind: "datemenu-hide-right-box",
-					}),
-					SwitchRow({
-						settings,
-						title: _("Disable menu"),
-						subtitle: _(
-							"Do not open date menu when the date menu button clicked",
-						),
-						bind: "datemenu-disable-menu",
-					}),
-				],
-			);
 		}
 	},
 );

@@ -196,18 +196,6 @@
     </key>
     <!-- #endregion Volume Mixer Widget -->
 
-    <!-- #region Date Menu Layout -->
-    <key name="datemenu-hide-left-box" type="b">
-      <default>true</default>
-    </key>
-    <key name="datemenu-hide-right-box" type="b">
-      <default>false</default>
-    </key>
-    <key name="datemenu-disable-menu" type="b">
-      <default>false</default>
-    </key>
-    <!-- #endregion Date Menu Layout -->
-
     <!-- #region System Items Layout -->
     <key name="system-items-layout-enabled" type="b">
       <default>false</default>

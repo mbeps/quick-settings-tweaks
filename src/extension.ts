@@ -7,7 +7,6 @@
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
 import Config from "./config.js";
 import { DebugFeature } from "./features/debug.js";
-import { DateMenuLayoutFeature } from "./features/layout/dateMenu.js";
 import { SystemIndicatorLayoutFeature } from "./features/layout/systemIndicator.js";
 import { SystemItemsLayoutFeature } from "./features/layout/systemItems.js";
 import { TogglesLayoutFeature } from "./features/layout/toggles.js";
@@ -53,7 +52,6 @@ export default class QstExtension extends Extension {
 			// new InputOutputFeature(),
 			new MediaWidgetFeature(),
 			new VolumeMixerWidgetFeature(),
-			new DateMenuLayoutFeature(),
 			new OverlayMenu(),
 			new MenuAnimation(),
 			new SystemItemsLayoutFeature(),
