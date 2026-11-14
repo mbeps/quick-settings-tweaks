@@ -446,7 +446,6 @@ class ToggleOrderInfo extends OrderInfo<ToggleOrderItem> {
 			["RfkillToggle", IGNORE_XGETTEXT("Airplane Mode")],
 			["RotationToggle", IGNORE_XGETTEXT("Auto Rotate")],
 			["DoNotDisturbToggle", _("Do Not Disturb")],
-			["UnsafeQuickToggle", _("Unsafe Mode")],
 		]);
 	}
 	getSystemIcons(): Map<string, string> {
@@ -464,7 +463,6 @@ class ToggleOrderInfo extends OrderInfo<ToggleOrderItem> {
 			["RfkillToggle", "airplane-mode-symbolic"],
 			["RotationToggle", "object-rotate-right"],
 			["DoNotDisturbToggle", "notifications-disabled-symbolic"],
-			["UnsafeQuickToggle", "channel-secure-symbolic"],
 		]);
 	}
 	getListFromSettings(): ToggleOrderItem[] {
@@ -514,9 +512,8 @@ class ToggleOrderInfo extends OrderInfo<ToggleOrderItem> {
 			);
 		return "";
 	}
-	canHide(item: ToggleOrderItem): boolean {
-		if (!item.isSystem) return true;
-		return item.constructorName !== "UnsafeQuickToggle";
+	canHide(_item: ToggleOrderItem): boolean {
+		return true;
 	}
 	canEdit(item: ToggleOrderItem): boolean {
 		return !item.isSystem && !item.nonOrdered;
@@ -527,10 +524,7 @@ class ToggleOrderInfo extends OrderInfo<ToggleOrderItem> {
 	create(friendlyName: string): ToggleOrderItem {
 		return ToggleOrderItem.create(friendlyName);
 	}
-	shouldShow(item: ToggleOrderItem): boolean {
-		if (item.constructorName === "UnsafeQuickToggle") {
-			return this.settings.get_boolean("unsafe-quick-toggle-enabled");
-		}
+	shouldShow(_item: ToggleOrderItem): boolean {
 		return true;
 	}
 }

@@ -324,7 +324,6 @@
           { 'hide': <false>, 'isSystem': <true>, 'constructorName': <'RfkillToggle'> },
           { 'hide': <false>, 'isSystem': <true>, 'constructorName': <'RotationToggle'> },
           { 'hide': <false>, 'isSystem': <true>, 'constructorName': <'DndQuickToggle'> },
-          { 'hide': <false>, 'isSystem': <true>, 'constructorName': <'UnsafeQuickToggle'> },
           { 'nonOrdered': <true>, 'hide': <false> }
         ]
       ]]></default>
@@ -341,18 +340,6 @@
       ]]></description>
     </key>
     <!-- #endregion Quick Toggle Layout -->
-
-    <!-- #region Unsafe Mode Quick Toggle -->
-    <key name="unsafe-quick-toggle-enabled" type="b">
-      <default>false</default>
-    </key>
-    <key name="unsafe-quick-toggle-last-state" type="b">
-      <default>false</default>
-    </key>
-    <key name="unsafe-quick-toggle-save-last-state" type="b">
-      <default>true</default>
-    </key>
-    <!-- #endregion Unsafe Mode Quick Toggle -->
 
     <!-- #region Menu Animation -->
     <key name="menu-animation-enabled" type="b">
