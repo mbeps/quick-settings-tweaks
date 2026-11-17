@@ -268,10 +268,10 @@ namespace StreamSlider {
 // #endregion StreamSlider
 
 // #region VolumeMixerItem
-	/**
-	 * Wraps a `StreamSlider` with an application/stream label for display in the volume mixer list.
-	 * Exists to pair each stream slider with a readable title above it.
-	 */
+/**
+ * Wraps a `StreamSlider` with an application/stream label for display in the volume mixer list.
+ * Exists to pair each stream slider with a readable title above it.
+ */
 class VolumeMixerItem extends St.BoxLayout {
 	_control: Gvc.MixerControl;
 	_stream: Gvc.MixerStream;
