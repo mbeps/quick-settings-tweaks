@@ -14,6 +14,13 @@ import {
 import type QstExtensionPreferences from "../prefs.js";
 
 // #region AdvancedAnimationStyleGroup
+/**
+ * Builds the preferences group for fine-tuning menu open/close animation and background effects.
+ * All rows are bound to `menu-animation-enabled` sensitivity.
+ *
+ * @param settings - GSettings instance for reading and writing animation preferences
+ * @returns Configured Adwaita preferences group for advanced animation settings
+ */
 function AdvancedAnimationStyleGroup(
 	settings: Gio.Settings,
 ): Adw.PreferencesGroup {
@@ -99,11 +106,22 @@ function AdvancedAnimationStyleGroup(
 }
 // #endregion AdvancedAnimationStyleGroup
 
+/**
+ * Preferences page for Quick Settings menu behaviour, overlay mode, and animation settings.
+ * Registered with GObject and added to the Adwaita preferences window.
+ */
 export const MenuPage = GObject.registerClass(
 	{
 		GTypeName: `${Config.baseGTypeName}MenuPage`,
 	},
 	class MenuPage extends Adw.PreferencesPage {
+		/**
+		 * Constructs the Menu preferences page with overlay mode and menu animation groups.
+		 *
+		 * @param settings - GSettings instance for reading and writing menu preferences
+		 * @param _prefs - Extension preferences controller (unused)
+		 * @param window - Parent preferences window used to present nested animation dialogs
+		 */
 		constructor(
 			settings: Gio.Settings,
 			_prefs: QstExtensionPreferences,

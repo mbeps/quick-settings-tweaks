@@ -16,6 +16,16 @@ import {
 } from "../libs/prefs/components.js";
 import type QstExtensionPreferences from "../prefs.js";
 
+/**
+ * Creates preference rows for customising a slider's style, handle, colours, and thickness.
+ * Automatically hides handle radius and colour rows when the slider style is set to "slim".
+ *
+ * @param options - Configuration object for the slider customisation rows
+ * @param options.settings - GSettings instance for reading and writing slider preferences
+ * @param options.baseName - Key prefix used to construct GSettings key names for this slider
+ * @param options.sensitiveBind - Optional GSettings boolean key controlling row sensitivity
+ * @returns Array of Adwaita preference rows for the slider
+ */
 function SliderCustomizes({
 	settings,
 	baseName,
@@ -92,11 +102,22 @@ function SliderCustomizes({
 	];
 }
 
+/**
+ * Preferences page for configuring Quick Settings widgets such as media, notifications, volume mixer, and weather.
+ * Registered with GObject and added to the Adwaita preferences window.
+ */
 export const WidgetsPage = GObject.registerClass(
 	{
 		GTypeName: `${Config.baseGTypeName}WidgetsPage`,
 	},
 	class WidgetsPage extends Adw.PreferencesPage {
+		/**
+		 * Constructs the Widgets preferences page and populates all widget configuration groups.
+		 *
+		 * @param settings - GSettings instance for reading and writing widget preferences
+		 * @param _prefs - Extension preferences controller (unused)
+		 * @param window - Parent preferences window used to present nested dialogs
+		 */
 		constructor(
 			settings: Gio.Settings,
 			_prefs: QstExtensionPreferences,

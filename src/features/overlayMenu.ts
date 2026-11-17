@@ -9,13 +9,28 @@ import * as AdvAni from "../libs/shell/advani.js";
 import { FeatureBase, type SettingLoader } from "../libs/shell/feature.js";
 import { QuickSettingsMenuTracker } from "../libs/shell/quickSettingsUtils.js";
 
+/**
+ * Turns Quick Settings submenus into centered or anchored floating overlay dialogs.
+ * Exists to prevent submenus from expanding the Quick Settings grid height and to add flyout/dialog animations.
+ */
 export class OverlayMenu extends FeatureBase {
 	// #region settings
+	/** Whether the overlay menu layout is enabled. */
 	enabled: boolean;
+	/** Fixed width in pixels for overlay menus, or `0` to keep default width. */
 	width: number;
+	/** Open animation duration in milliseconds, or `0` to disable animation. */
 	duration: number;
+	/** Animation style (`"flyout"` or `"dialog"`). */
 	animationStyle: string;
+	/** Vertical anchor when menu height exceeds `QuickSettingsBox` (`"center"`, `"top"`, or `"bottom"`). */
 	overflowAnchor: string;
+
+	/**
+	 * Loads overlay menu sizing, animation, and anchor settings from GSettings.
+	 *
+	 * @param loader - Setting loader bound to the extension schema
+	 */
 	override loadSettings(loader: SettingLoader): void {
 		this.enabled = loader.loadBoolean("overlay-menu-enabled");
 		this.width = loader.loadInt("overlay-menu-width");
@@ -25,6 +40,12 @@ export class OverlayMenu extends FeatureBase {
 	}
 	// #endregion settings
 
+	/**
+	 * Computes target overlay dimensions, centered/anchored offsets, and source actor bounds.
+	 *
+	 * @param menu - Submenu whose geometry is being calculated
+	 * @returns Computed dimensions, source coordinates, and overlay constraint offsets
+	 */
 	getCoords(menu: QuickSettingsMenu): {
 		outerHeight: number;
 		targetHeight: number;
@@ -86,6 +107,13 @@ export class OverlayMenu extends FeatureBase {
 		};
 	}
 
+	/**
+	 * Positions and animates the overlay menu when it opens.
+	 *
+	 * @param _maid - Cleanup maid for the open state
+	 * @param menu - Submenu being opened or closed
+	 * @param isOpen - Whether the submenu is opening (`true`) or closing (`false`)
+	 */
 	onOpen(_maid: Maid, menu: QuickSettingsMenu, isOpen: boolean) {
 		if (!isOpen || !this.duration) menu.actor.set_easing_duration(0);
 		else menu.actor.remove_all_transitions();
@@ -137,6 +165,12 @@ export class OverlayMenu extends FeatureBase {
 		}
 	}
 
+	/**
+	 * Disables default menu positioning constraints, applies configured width, and tracks height changes.
+	 *
+	 * @param maid - Cleanup maid tied to the menu's lifecycle
+	 * @param menu - Newly created `QuickSettingsMenu` instance
+	 */
 	onMenuCreated(maid: Maid, menu: QuickSettingsMenu) {
 		menu.actor.get_constraints()[0].enabled = false;
 		if (this.width) {
@@ -152,15 +186,27 @@ export class OverlayMenu extends FeatureBase {
 		});
 	}
 
+	/** Tracker monitoring Quick Settings submenu creation and open/close events. */
 	tracker: QuickSettingsMenuTracker;
+	/** Horizontal bind constraint positioning `_overlay` relative to `_boxPointer`. */
 	xconstraint: Clutter.BindConstraint;
+	/** Vertical bind constraint positioning `_overlay` relative to `_boxPointer`. */
 	yconstraint: Clutter.BindConstraint;
+
+	/**
+	 * Skips full feature reload for animation/anchor settings that are read dynamically on open.
+	 *
+	 * @param changedKey - GSettings key that changed, if any
+	 */
 	override reload(changedKey?: string): void {
 		if (changedKey === "overlay-menu-animate-duration") return;
 		if (changedKey === "overlay-menu-animate-style") return;
 		if (changedKey === "overlay-menu-overflow-anchor") return;
 		super.reload(changedKey);
 	}
+	/**
+	 * Replaces default overlay constraints and starts the submenu tracker.
+	 */
 	override onLoad(): void {
 		if (!this.enabled) return;
 
@@ -190,6 +236,9 @@ export class OverlayMenu extends FeatureBase {
 		this.tracker.onMenuOpen = this.onOpen.bind(this);
 		this.tracker.load();
 	}
+	/**
+	 * Restores default menu and overlay constraints and unloads the submenu tracker.
+	 */
 	override onUnload(): void {
 		const tracker = this.tracker;
 		if (!tracker) return;

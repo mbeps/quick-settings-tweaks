@@ -25,6 +25,10 @@ import { StyledScroll } from "../../libs/shell/styler.js";
 const ALLOW_AMPLIFIED_VOLUME_KEY = "allow-volume-above-100-percent";
 
 // #region StreamSlider
+/**
+ * Volume slider control bound to a single `Gvc.MixerStream`.
+ * Exists to provide per-application or per-stream volume adjustment with optional amplification and feedback sounds.
+ */
 class StreamSlider extends QuickSlider {
 	_maid: Maid;
 	_control: Gvc.MixerControl;
@@ -264,6 +268,10 @@ namespace StreamSlider {
 // #endregion StreamSlider
 
 // #region VolumeMixerItem
+/**
+ * Wraps a `StreamSlider` with an application/stream label for display in the volume mixer list.
+ * Exists to pair each stream slider with a readable title above it.
+ */
 class VolumeMixerItem extends St.BoxLayout {
 	_control: Gvc.MixerControl;
 	_stream: Gvc.MixerStream;
@@ -354,6 +362,10 @@ namespace VolumeMixerItem {
 // #endregion VolumeMixerItem
 
 // #region VolumeMixerList
+/**
+ * Manages the list of active `VolumeMixerItem` rows and listens to `Gvc.MixerControl` stream events.
+ * Exists to filter, create, update, and remove per-stream volume items as audio streams come and go.
+ */
 class VolumeMixerList extends St.BoxLayout {
 	_control: Gvc.MixerControl;
 	_maid: Maid;
@@ -502,6 +514,10 @@ namespace VolumeMixerList {
 // #endregion VolumeMixerList
 
 // #region VolumeMixerWidget
+/**
+ * Scrollable container widget holding the `VolumeMixerList` inside Quick Settings.
+ * Exists to constrain height, manage scrollbars, and sync visibility when no streams are active.
+ */
 class VolumeMixerWidget extends St.BoxLayout {
 	_options: VolumeMixerWidget.Options;
 	// _header: Header
@@ -601,6 +617,10 @@ namespace VolumeMixerWidget {
 // #endregion VolumeMixerWidget
 
 // #region VolumeMixerWidgetFeature
+/**
+ * Integrates the per-application volume mixer widget into Quick Settings.
+ * Exists to either embed the mixer inline in the Quick Settings grid or attach it to the output slider menu.
+ */
 export class VolumeMixerWidgetFeature extends FeatureBase {
 	// #region settings
 	enabled: boolean;
@@ -611,6 +631,11 @@ export class VolumeMixerWidgetFeature extends FeatureBase {
 	menuEnabled: boolean;
 	menuIcon: string;
 	scrollStyle: StyledScroll.Options;
+	/**
+	 * Loads volume mixer settings from GSettings.
+	 *
+	 * @param loader - Setting loader bound to the extension schema
+	 */
 	override loadSettings(loader: SettingLoader): void {
 		this.enabled = loader.loadBoolean("volume-mixer-enabled");
 		this.showIcon = loader.loadBoolean("volume-mixer-show-icon");
@@ -628,6 +653,11 @@ export class VolumeMixerWidgetFeature extends FeatureBase {
 	volumeMixerWidget: VolumeMixerWidget;
 	mixerMenuButton: St.Button;
 	mixerMenuSection: PopupMenu.PopupMenuSection;
+	/**
+	 * Attaches the volume mixer widget to the output stream slider's menu.
+	 *
+	 * @param slider - Output `StreamSlider` whose menu hosts the volume mixer
+	 */
 	createMenu(slider: Volume.StreamSlider) {
 		// Create section
 		this.mixerMenuSection = new PopupMenu.PopupMenuSection();
@@ -676,6 +706,11 @@ export class VolumeMixerWidgetFeature extends FeatureBase {
 		});
 		this.maid.functionJob(revertChanges);
 	}
+	/**
+	 * Updates mixer options in place or triggers a full reload for structural setting changes.
+	 *
+	 * @param key - GSettings key that changed
+	 */
 	override reload(key: string): void {
 		switch (key) {
 			case "volume-mixer-max-height":
@@ -692,6 +727,9 @@ export class VolumeMixerWidgetFeature extends FeatureBase {
 				break;
 		}
 	}
+	/**
+	 * Creates the volume mixer widget and mounts it either in the grid or in the output slider menu.
+	 */
 	override onLoad(): void {
 		this.volumeMixerWidget = new VolumeMixerWidget(this);
 		this.maid.destroyJob(this.volumeMixerWidget);
@@ -712,6 +750,9 @@ export class VolumeMixerWidgetFeature extends FeatureBase {
 			});
 		}
 	}
+	/**
+	 * Destroys the volume mixer widget and cleans up any menu-mode references.
+	 */
 	override onUnload(): void {
 		this.volumeMixerWidget = null;
 	}

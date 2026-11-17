@@ -33,13 +33,29 @@ type TaskRecord =
 			HideUndoCallback<HideableObject> | undefined,
 	  ];
 
+/**
+ * Tracks cleanup tasks (signal connections, patches, hidden widgets, disposables) and tears them down together.
+ * Use in GNOME Shell extensions to guarantee deterministic cleanup on `disable()` in priority order.
+ */
 class Maid {
 	private records: TaskRecord[];
 
+	/**
+	 * Creates a new `Maid` instance with an empty task list.
+	 */
 	constructor() {
 		this.records = [];
 	}
 
+	/**
+	 * Connects a GObject signal and schedules it for automatic disconnection on cleanup.
+	 *
+	 * @param signalObject - Object emitting the signal
+	 * @param signalName - Name of the signal to connect
+	 * @param handleFunc - Signal handler callback
+	 * @param priority - Cleanup priority (higher values run first)
+	 * @returns Signal connection ID
+	 */
 	connectJob(
 		signalObject: SignalObject,
 		signalName: string,
@@ -54,10 +70,23 @@ class Maid {
 		return id;
 	}
 
+	/**
+	 * Registers an arbitrary callback to run during cleanup.
+	 *
+	 * @param func - Cleanup callback to invoke
+	 * @param priority - Cleanup priority (higher values run first)
+	 */
 	functionJob(func: () => unknown, priority: number = 0) {
 		this.getRecords().push([Maid.TaskType.Function, priority, func]);
 	}
 
+	/**
+	 * Schedules `object.dispose()` to be called during cleanup.
+	 *
+	 * @param object - Disposable object
+	 * @param priority - Cleanup priority (higher values run first)
+	 * @returns The same `object` for chaining
+	 */
 	disposeJob<T extends { dispose: () => void }>(
 		object: T,
 		priority: number = 0,
@@ -66,6 +95,13 @@ class Maid {
 		return object;
 	}
 
+	/**
+	 * Schedules `object.run_dispose()` to be called during cleanup.
+	 *
+	 * @param object - Object implementing `run_dispose()`
+	 * @param priority - Cleanup priority (higher values run first)
+	 * @returns The same `object` for chaining
+	 */
 	runDisposeJob<T extends { run_dispose: () => void }>(
 		object: T,
 		priority: number = 0,
@@ -74,6 +110,13 @@ class Maid {
 		return object;
 	}
 
+	/**
+	 * Schedules `object.destroy()` to be called during cleanup.
+	 *
+	 * @param object - Destroyable object (e.g., St/Clutter actor)
+	 * @param priority - Cleanup priority (higher values run first)
+	 * @returns The same `object` for chaining
+	 */
 	destroyJob<T extends { destroy: () => void }>(
 		object: T,
 		priority: number = 0,
@@ -82,16 +125,32 @@ class Maid {
 		return object;
 	}
 
+	/**
+	 * Runs all registered cleanup tasks and invalidates this `Maid` instance.
+	 */
 	destroy() {
 		this.clear();
 		this.records = null;
 	}
 
+	/**
+	 * Returns the internal task record array, throwing if already destroyed.
+	 *
+	 * @returns Array of scheduled task records
+	 */
 	getRecords(): Maid["records"] {
 		if (!this.records) Error("Maid object already destroyed");
 		return this.records;
 	}
 
+	/**
+	 * Monkey-patches a property or method on `patchObject` and restores the original on cleanup.
+	 *
+	 * @param patchObject - Target object to patch
+	 * @param patchName - Property or method name to replace
+	 * @param handleFunc - Factory receiving the original value and returning the replacement
+	 * @param priority - Cleanup priority (higher values run first)
+	 */
 	patchJob(
 		patchObject: object,
 		patchName: string,
@@ -116,6 +175,13 @@ class Maid {
 	}
 
 	// [ patchObject, connection, original, undo? ]
+	/**
+	 * Hides `patchObject`, suppresses subsequent `show` signals, and restores visibility on cleanup.
+	 *
+	 * @param patchObject - Hideable actor or widget
+	 * @param undo - Optional callback to customize visibility restoration on cleanup
+	 * @param priority - Cleanup priority (higher values run first)
+	 */
 	hideJob<T extends HideableObject>(
 		patchObject: T,
 		undo?: HideUndoCallback<T>,
@@ -141,6 +207,9 @@ class Maid {
 		]);
 	}
 
+	/**
+	 * Executes all scheduled cleanup tasks in descending priority order and resets the task list.
+	 */
 	clear() {
 		const records = this.getRecords();
 		records.sort((a, b) => b[1] - a[1]);
@@ -194,6 +263,9 @@ class Maid {
 	}
 }
 namespace Maid {
+	/**
+	 * Discriminator for cleanup task records stored by `Maid`.
+	 */
 	export enum TaskType {
 		Connect,
 		Function,
@@ -203,6 +275,9 @@ namespace Maid {
 		Patch,
 		Hide,
 	}
+	/**
+	 * Standard cleanup priority presets (higher values execute earlier).
+	 */
 	export const Priority = {
 		High: 2000,
 		Default: 0,

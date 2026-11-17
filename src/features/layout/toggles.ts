@@ -8,11 +8,24 @@ import { FeatureBase, type SettingLoader } from "../../libs/shell/feature.js";
 import { QuickSettingsToggleTracker } from "../../libs/shell/quickSettingsUtils.js";
 import { ToggleOrderItem } from "../../libs/types/toggleOrderItem.js";
 
+/**
+ * Customizes visibility and ordering of Quick Settings toggles in the grid.
+ * Exists to hide unwanted toggles and arrange remaining toggles around a `nonOrdered` anchor.
+ */
 export class TogglesLayoutFeature extends FeatureBase {
 	// #region settings
+	/** Whether toggle layout customization is enabled. */
 	enabled: boolean;
+	/** Ordered list of toggle matching rules, including compiled title regexes. */
 	order: ToggleOrderItem[];
+	/** Fallback rule applied to toggles not explicitly matched in `order`. */
 	unordered: ToggleOrderItem;
+
+	/**
+	 * Loads toggle layout settings and precompiles any `titleRegex` patterns.
+	 *
+	 * @param loader - Setting loader bound to the extension schema
+	 */
 	override loadSettings(loader: SettingLoader): void {
 		this.enabled = loader.loadBoolean("toggles-layout-enabled");
 		this.order = loader.loadValue("toggles-layout-order");
@@ -27,12 +40,22 @@ export class TogglesLayoutFeature extends FeatureBase {
 	}
 	// #endregion settings
 
+	/**
+	 * Hides a newly created toggle if its matching order rule specifies `hide`.
+	 *
+	 * @param maid - Cleanup maid tied to the toggle's lifecycle
+	 * @param toggle - Newly created `QuickToggle` or `QuickMenuToggle` instance
+	 */
 	onToggleCreated(maid: Maid, toggle: QuickToggle | QuickMenuToggle): void {
 		const rule: ToggleOrderItem =
 			this.order.find((item) => ToggleOrderItem.toggleMatch(item, toggle)) ??
 			this.unordered;
 		if (rule.hide) maid.hideJob(toggle);
 	}
+	/**
+	 * Reorders toggles in `Global.QuickSettingsGrid` according to `this.order`.
+	 * Excludes `BackgroundAppsToggle` and places unmatched toggles at the `nonOrdered` position.
+	 */
 	onUpdate(): void {
 		const children = Global.QuickSettingsGrid.get_children();
 		const head: (QuickToggle | QuickMenuToggle)[] = [];
@@ -63,7 +86,12 @@ export class TogglesLayoutFeature extends FeatureBase {
 		}
 	}
 
+	/** Tracker monitoring `Global.QuickSettingsGrid` toggle additions and updates. */
 	tracker: QuickSettingsToggleTracker;
+
+	/**
+	 * Starts the toggle tracker when toggle layout customization is enabled.
+	 */
 	override onLoad(): void {
 		if (!this.enabled) return;
 		this.tracker = new QuickSettingsToggleTracker();
@@ -71,6 +99,9 @@ export class TogglesLayoutFeature extends FeatureBase {
 		this.tracker.onUpdate = this.onUpdate.bind(this);
 		this.tracker.load();
 	}
+	/**
+	 * Unloads the toggle tracker and clears its reference.
+	 */
 	override onUnload(): void {
 		const tracker = this.tracker;
 		if (tracker) {

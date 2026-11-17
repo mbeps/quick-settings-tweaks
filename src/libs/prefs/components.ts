@@ -23,12 +23,27 @@ function setLinkCursor(target: Gtk.Widget) {
 	target.cursor = Gdk.Cursor.new_from_name("pointer", null);
 }
 
+/**
+ * Toggles `scrollToFocus` on the `Gtk.Viewport` inside an `Adw.PreferencesPage`.
+ * Used to prevent Adwaita from auto-scrolling to focused widgets when pages are mapped/unmapped.
+ *
+ * @param target - Preferences page whose inner viewport should be updated
+ * @param value - Whether the viewport should scroll to focused children
+ */
 export function setScrollToFocus(target: Adw.PreferencesPage, value: boolean) {
 	const viewport = target
 		.get_first_child() // GtkScrolledWindow
 		.get_first_child() as Gtk.Viewport; // GtkViewport
 	viewport.scrollToFocus = value;
 }
+
+/**
+ * Schedules `setScrollToFocus` after a 10ms timeout on the GLib default loop.
+ * Used on page `map` so Adwaita finishes initial layout before re-enabling scroll-to-focus.
+ *
+ * @param target - Preferences page whose inner viewport should be updated
+ * @param value - Whether the viewport should scroll to focused children
+ */
 export function delayedSetScrollToFocus(
 	target: Adw.PreferencesPage,
 	value: boolean,
@@ -42,7 +57,13 @@ export function delayedSetScrollToFocus(
 		"[quick-settings-tweaks] delayedSetScrollToFocus: id",
 	);
 }
-// Fix adwaita scroll flicking issue
+
+/**
+ * Workaround for Adwaita preferences page scroll-flickering when switching tabs.
+ * Disables `scrollToFocus` on `unmap` and re-enables it after a short delay on `map`.
+ *
+ * @param page - Preferences page to attach the workaround handlers to
+ */
 export function fixPageScrollIssue(page: Adw.PreferencesPage) {
 	page.connect("unmap", () => {
 		setScrollToFocus(page, false);
@@ -51,6 +72,14 @@ export function fixPageScrollIssue(page: Adw.PreferencesPage) {
 		delayedSetScrollToFocus(page, true);
 	});
 }
+
+/**
+ * Inserts a widget before the first existing suffix widget in an `Adw.ActionRow`.
+ *
+ * @param row_with_suffix - Action row containing a suffix box
+ * @param button - Widget to insert before the first suffix
+ * @returns The previous first suffix widget, or `null` if none existed
+ */
 export function pushButton(
 	row_with_suffix: Adw.ActionRow,
 	button: Gtk.Widget,
@@ -62,6 +91,14 @@ export function pushButton(
 	button.insert_before(suffixes, first_suffix);
 	return first_suffix;
 }
+
+/**
+ * Adds a compact "Details" gear button to an `Adw.ActionRow` and wires row activation to `onDetailed`.
+ *
+ * @param row_with_suffix - Action row to augment with a details button
+ * @param onDetailed - Callback invoked when the details button or row is activated
+ * @returns The created `Gtk.Button` instance
+ */
 export function pushDetailedButton(
 	row_with_suffix: Adw.ActionRow,
 	onDetailed: () => void,
@@ -83,6 +120,12 @@ export function pushDetailedButton(
 	if (switchWidget) switchWidget.canFocus = true;
 	return button;
 }
+
+/**
+ * Removes the bottom border from an `Adw.EntryRow` or `Adw.ActionRow` via inline CSS.
+ *
+ * @param row - Row widget whose bottom border should be hidden
+ */
 export function removeRowBottomBorder(row: Adw.EntryRow | Adw.ActionRow) {
 	const style = new Gtk.CssProvider();
 	style.load_from_string("row{border-bottom-width:0px;}");
@@ -90,6 +133,12 @@ export function removeRowBottomBorder(row: Adw.EntryRow | Adw.ActionRow) {
 		.get_style_context()
 		.add_provider(style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
+
+/**
+ * Removes the minimum row height and header height from an `Adw.EntryRow` or `Adw.ActionRow`.
+ *
+ * @param row - Row widget to make compact
+ */
 export function removeRowMinHeight(row: Adw.EntryRow | Adw.ActionRow) {
 	const styleRow = new Gtk.CssProvider();
 	styleRow.load_from_string("row{min-height:0px;}");
@@ -105,6 +154,12 @@ export function removeRowMinHeight(row: Adw.EntryRow | Adw.ActionRow) {
 }
 
 // #region Dialog
+/**
+ * Creates and presents an `Adw.PreferencesDialog` populated by `childrenRequest`.
+ *
+ * @param options - Dialog title, height, presentation mode, parent window, and content builder
+ * @returns The presented `Adw.PreferencesDialog` instance
+ */
 export function Dialog({
 	window,
 	title,
@@ -122,17 +177,27 @@ export function Dialog({
 	return dialog;
 }
 export namespace Dialog {
+	/** Callback that builds `Adw.PreferencesGroup` children for a dialog page. */
 	export type ChildrenRequest = (
 		page: Adw.PreferencesPage,
 		dialog: Adw.PreferencesDialog,
 	) => Adw.PreferencesGroup[];
+
+	/** Options for creating and presenting a `Dialog`. */
 	export interface Options {
+		/** Optional dialog title. */
 		title?: string;
+		/** Optional minimum height request in pixels. */
 		minHeight?: number;
+		/** Builder returning preference groups for the dialog page. */
 		childrenRequest: ChildrenRequest;
+		/** Parent preferences window to present the dialog on. */
 		window: Adw.PreferencesWindow;
+		/** Present as a floating popup instead of a bottom sheet when true. */
 		usePopup?: boolean;
 	}
+
+	/** Preferences page used inside `PrefDialog` and `StackedPage`. */
 	export const PrefDialogPage = GObject.registerClass(
 		{
 			GTypeName: "offx1-pref-components-PrefDialogPage",
@@ -153,6 +218,8 @@ export namespace Dialog {
 			}
 		},
 	);
+
+	/** `Adw.PreferencesDialog` subclass configured with search and presentation mode. */
 	export const PrefDialog = GObject.registerClass(
 		{
 			GTypeName: "offx1-pref-components-PrefDialog",
@@ -174,6 +241,13 @@ export namespace Dialog {
 			}
 		},
 	);
+
+	/**
+	 * Pushes a new `Adw.NavigationPage` subpage onto an existing `Adw.PreferencesDialog`.
+	 *
+	 * @param options - Subpage title, parent dialog, and content builder
+	 * @returns The pushed `Adw.NavigationPage`
+	 */
 	export function StackedPage({
 		title,
 		dialog,
@@ -198,6 +272,12 @@ export namespace Dialog {
 // #endregion Dialog
 
 // #region ExperimentalIcon
+/**
+ * Creates a science-flask `Gtk.Image` icon indicating an experimental feature.
+ *
+ * @param options - Optional icon size and horizontal margins
+ * @returns Configured `Gtk.Image` with tooltip
+ */
 export function ExperimentalIcon(
 	options?: ExperimentalIcon.Options,
 ): Gtk.Image {
@@ -213,11 +293,19 @@ export function ExperimentalIcon(
 	});
 }
 export namespace ExperimentalIcon {
+	/** Size and margin options for `ExperimentalIcon`. */
 	export interface Options {
 		marginEnd?: number;
 		marginStart?: number;
 		pixelSize?: number;
 	}
+
+	/**
+	 * Prepends an `ExperimentalIcon` as the first child of `holder`.
+	 *
+	 * @param holder - Container widget to prepend the icon to
+	 * @param options - Optional icon size and margins
+	 */
 	export function prependExperimentalIcon(
 		holder: Gtk.Widget,
 		options?: ExperimentalIcon.Options,
@@ -228,6 +316,14 @@ export namespace ExperimentalIcon {
 // #endregion ExperimentalIcon
 
 // #region Group
+/**
+ * Creates an `Adw.PreferencesGroup`, optionally adds children, attaches it to a parent page,
+ * and prepends an experimental badge if `experimental` is true.
+ *
+ * @param options - Group properties, optional `parent` page, `experimental` flag, `nesting` spacing, and `onCreated` hook
+ * @param children - Optional child widgets to add to the group
+ * @returns The created `Adw.PreferencesGroup`
+ */
 export function Group(
 	options: Group.Options,
 	children?: (Gtk.Widget | null | undefined)[],
@@ -251,6 +347,7 @@ export function Group(
 	return target;
 }
 export namespace Group {
+	/** Options for creating a `Group`. */
 	export type Options = Partial<
 		Adw.PreferencesGroup.ConstructorProps & {
 			parent: Adw.PreferencesPage;
@@ -263,6 +360,13 @@ export namespace Group {
 // #endregion Group
 
 // #region Row
+/**
+ * Creates an `Adw.ActionRow` with optional URI launching, click action, icons,
+ * prefix/suffix widgets, and GSettings sensitivity binding.
+ *
+ * @param options - Row configuration options
+ * @returns The created `Adw.ActionRow`
+ */
 export function Row({
 	settings,
 	parent,
@@ -321,6 +425,7 @@ export function Row({
 	return row;
 }
 export namespace Row {
+	/** Options for creating a `Row`. */
 	export interface Options {
 		parent?: Adw.PreferencesGroup;
 		title?: string;
@@ -336,6 +441,13 @@ export namespace Row {
 		action?: () => void;
 		onCreated?: (row: Adw.ActionRow) => void;
 	}
+
+	/**
+	 * Prepends a leading icon before the row's title text.
+	 *
+	 * @param row - Target `Adw.ActionRow`
+	 * @param name - Icon name from the current icon theme
+	 */
 	export function appendLinkIcon(row: Adw.ActionRow, name: string) {
 		const linkText = row.child.get_first_child();
 		linkText.margin_start = 32;
@@ -349,6 +461,13 @@ export namespace Row {
 		});
 		image.insert_before(row.child, linkText);
 	}
+
+	/**
+	 * Appends a trailing icon to the row's suffix area.
+	 *
+	 * @param row - Target `Adw.ActionRow`
+	 * @param name - Icon name from the current icon theme
+	 */
 	export function addSuffixIcon(row: Adw.ActionRow, name: string) {
 		row.add_suffix(
 			new Gtk.Image({
@@ -364,6 +483,12 @@ export namespace Row {
 // #endregion Row
 
 // #region DialogRow
+/**
+ * Creates an `Adw.ActionRow` that opens a `Dialog` when activated.
+ *
+ * @param options - Combined `Row.Options` and `Dialog.Options`
+ * @returns The created `Adw.ActionRow`
+ */
 export function DialogRow(options: DialogRow.Options): Adw.ActionRow {
 	return Row({
 		...options,
@@ -379,6 +504,7 @@ export function DialogRow(options: DialogRow.Options): Adw.ActionRow {
 	});
 }
 export namespace DialogRow {
+	/** Options for creating a `DialogRow`. */
 	export interface Options extends Dialog.Options, Row.Options {
 		dialogTitle?: string;
 		onDialogCreated?: (dialog: Adw.PreferencesDialog) => void;
@@ -387,6 +513,13 @@ export namespace DialogRow {
 // #endregion DialogRow
 
 // #region ResetButton
+/**
+ * Creates a compact reset button that restores a GSettings key to its default value.
+ * Automatically hides itself when the setting already equals its default.
+ *
+ * @param options - Reset button configuration bound to a GSettings key
+ * @returns A `Gtk.Box` containing the reset `Gtk.Button`
+ */
 export function ResetButton(options: ResetButton.Options): Gtk.Box {
 	const { settings, bind } = options;
 	options.iconName ??= "view-refresh-symbolic";
@@ -415,10 +548,21 @@ export function ResetButton(options: ResetButton.Options): Gtk.Box {
 	return box;
 }
 export namespace ResetButton {
+	/** Options for creating a `ResetButton`. */
 	export interface Options extends Button.OptionsBase {
+		/** GSettings key to reset when clicked. */
 		bind: string;
+		/** When true, keeps the button visible whenever a user value is set, even if it matches the default. */
 		dontHideWhenMatch?: boolean;
 	}
+
+	/**
+	 * Checks whether a GSettings key has a user-set value and whether it matches the schema default.
+	 *
+	 * @param settings - GSettings instance to inspect
+	 * @param key - GSettings key name
+	 * @returns Object with `isMatch` (equals default or unset) and `isSet` (has a user value)
+	 */
 	export function getOptionState(
 		settings: Gio.Settings,
 		key: string,
@@ -435,6 +579,13 @@ export namespace ResetButton {
 				(userValue && defaultValue && userValue.equal(defaultValue)),
 		};
 	}
+
+	/**
+	 * Creates a `ResetButton` and inserts it into the suffix area of `row_with_suffix`.
+	 *
+	 * @param row_with_suffix - Target `Adw.ActionRow`
+	 * @param options - Reset button configuration
+	 */
 	export function pushResetButton(
 		row_with_suffix: Adw.ActionRow,
 		options: ResetButton.Options,
@@ -445,6 +596,12 @@ export namespace ResetButton {
 // #endregion ResetButton
 
 // #region SwitchRow
+/**
+ * Creates an `Adw.SwitchRow` bound to a boolean GSettings key with optional reset and details buttons.
+ *
+ * @param options - Switch row configuration options
+ * @returns The created `Adw.SwitchRow`
+ */
 export function SwitchRow({
 	bind,
 	parent,
@@ -498,6 +655,7 @@ export function SwitchRow({
 	return row;
 }
 export namespace SwitchRow {
+	/** Options for creating a `SwitchRow`. */
 	export interface Options {
 		settings?: Gio.Settings;
 		value?: boolean;
@@ -516,6 +674,12 @@ export namespace SwitchRow {
 // #endregion SwitchRow
 
 // #region ToggleButtonRow
+/**
+ * Creates an `Adw.ActionRow` with a `Gtk.ToggleButton` suffix bound to a boolean GSettings key.
+ *
+ * @param options - Toggle button row configuration options
+ * @returns The created `Adw.ActionRow`
+ */
 export function ToggleButtonRow({
 	bind,
 	parent,
@@ -583,6 +747,7 @@ export function ToggleButtonRow({
 	return row;
 }
 export namespace ToggleButtonRow {
+	/** Options for creating a `ToggleButtonRow`. */
 	export interface Options {
 		settings?: Gio.Settings;
 		value?: boolean;
@@ -601,6 +766,12 @@ export namespace ToggleButtonRow {
 // #endregion ToggleButtonRow
 
 // #region Button
+/**
+ * Creates a `Gtk.Button` wrapped in a `Gtk.Box` with optional icon, label, tooltip, and sensitivity binding.
+ *
+ * @param options - Button configuration options
+ * @returns The outer `Gtk.Box` containing the `Gtk.Button`
+ */
 export function Button({
 	parent,
 	action,
@@ -668,9 +839,12 @@ export function Button({
 	return box;
 }
 export namespace Button {
+	/** Options for creating a `Button`. */
 	export interface Options extends OptionsBase {
 		onCreated?: (row: Gtk.Box) => void;
 	}
+
+	/** Shared base options for `Button` and button-containing rows. */
 	export interface OptionsBase {
 		settings?: Gio.Settings;
 		parent?: Adw.PreferencesGroup;
@@ -687,6 +861,12 @@ export namespace Button {
 // #endregion Button
 
 // #region ButtonRow
+/**
+ * Creates an `Adw.ActionRow` with a `Button` placed in its suffix area.
+ *
+ * @param options - Button row configuration options
+ * @returns The created `Adw.ActionRow`
+ */
 export function ButtonRow(options: ButtonRow.Options): Adw.ActionRow {
 	const { parent, title, subtitle, experimental, onCreated } = options;
 	const row = new Adw.ActionRow({
@@ -711,6 +891,7 @@ export function ButtonRow(options: ButtonRow.Options): Adw.ActionRow {
 	return row;
 }
 export namespace ButtonRow {
+	/** Options for creating a `ButtonRow`. */
 	export interface Options extends Button.OptionsBase {
 		settings?: Gio.Settings;
 		parent?: Adw.PreferencesGroup;
@@ -728,6 +909,12 @@ export namespace ButtonRow {
 // #endregion ButtonRow
 
 // #region UpDownButton
+/**
+ * Creates a pair of up/down `Gtk.Button` controls inside a `Gtk.Box` for reordering items.
+ *
+ * @param options - Up/down button configuration options
+ * @returns The `Gtk.Box` containing the up and down buttons
+ */
 export function UpDownButton({
 	parent,
 	action,
@@ -784,6 +971,7 @@ export function UpDownButton({
 	return box;
 }
 export namespace UpDownButton {
+	/** Options for creating an `UpDownButton`. */
 	export interface Options {
 		settings?: Gio.Settings;
 		parent?: Adw.PreferencesGroup;
@@ -794,6 +982,8 @@ export namespace UpDownButton {
 		sensitiveBind?: string;
 		onCreated?: (row: Gtk.Box) => void;
 	}
+
+	/** Direction emitted when either the up or down button is clicked. */
 	export enum Direction {
 		Up,
 		Down,
@@ -802,6 +992,13 @@ export namespace UpDownButton {
 // #endregion UpDownButton
 
 // #region RgbColorRow
+/**
+ * Creates an `Adw.ActionRow` with a `Gtk.ColorButton` suffix bound to an integer-array (`ai`) GSettings color key.
+ * Supports optional alpha channel (0–1000) and displays a "Theme default" overlay when the array is empty.
+ *
+ * @param options - Color row configuration options
+ * @returns The created `Adw.ActionRow`
+ */
 export function RgbColorRow({
 	title,
 	subtitle,
@@ -911,7 +1108,10 @@ export function RgbColorRow({
 	return row;
 }
 export namespace RgbColorRow {
+	/** Integer array `[r, g, b]` (0–255) or `[r, g, b, a]` (alpha 0–1000), or empty for theme default. */
 	export type Color = number[];
+
+	/** Options for creating an `RgbColorRow`. */
 	export interface Options {
 		title?: string;
 		subtitle?: string;
@@ -931,6 +1131,12 @@ export namespace RgbColorRow {
 // #endregion RgbColorRow
 
 // #region EntryRow
+/**
+ * Creates an `Adw.EntryRow` bound to a string GSettings key with optional reset button.
+ *
+ * @param options - Entry row configuration options
+ * @returns The created `Adw.EntryRow`
+ */
 export function EntryRow({
 	bind,
 	parent,
@@ -979,6 +1185,7 @@ export function EntryRow({
 	return row;
 }
 export namespace EntryRow {
+	/** Options for creating an `EntryRow`. */
 	export interface Options {
 		settings?: Gio.Settings;
 		bind?: string;
@@ -995,6 +1202,12 @@ export namespace EntryRow {
 // #endregion EntryRow
 
 // #region AdjustmentRow
+/**
+ * Creates an `Adw.SpinRow` bound to an integer GSettings key with configurable min, max, and step increments.
+ *
+ * @param options - Spin row configuration options
+ * @returns The created `Adw.SpinRow`
+ */
 export function AdjustmentRow({
 	max,
 	min,
@@ -1063,6 +1276,7 @@ export function AdjustmentRow({
 	return row;
 }
 export namespace AdjustmentRow {
+	/** Options for creating an `AdjustmentRow`. */
 	export interface Options {
 		settings?: Gio.Settings;
 		max?: number;
@@ -1084,6 +1298,13 @@ export namespace AdjustmentRow {
 // #endregion AdjustmentRow
 
 // #region ExpanderRow
+/**
+ * Creates an `Adw.ExpanderRow` and populates it with nested child rows.
+ *
+ * @param options - Expander row configuration options
+ * @param children - Optional child widgets to add inside the expander
+ * @returns The created `Adw.ExpanderRow`
+ */
 export function ExpanderRow(
 	{
 		parent,
@@ -1116,6 +1337,7 @@ export function ExpanderRow(
 	return row;
 }
 export namespace ExpanderRow {
+	/** Options for creating an `ExpanderRow`. */
 	export interface Options {
 		parent?: Adw.PreferencesGroup;
 		title?: string;
@@ -1130,6 +1352,13 @@ export namespace ExpanderRow {
 // #endregion ExpanderRow
 
 // #region DropdownRow
+/**
+ * Creates an `Adw.ComboRow` bound to a string or integer GSettings key.
+ * Automatically infers whether to use `get_string`/`set_string` or `get_int`/`set_int` from `items`.
+ *
+ * @param options - Dropdown row configuration and item list
+ * @returns The created `Adw.ComboRow`
+ */
 export function DropdownRow<T extends string | number>({
 	settings,
 	items,
@@ -1236,10 +1465,13 @@ export function DropdownRow<T extends string | number>({
 	return row;
 }
 export namespace DropdownRow {
+	/** GObject item model interface representing a single dropdown option. */
 	export interface DropdownItem<T = string | number> extends GObject.Object {
 		name: string;
 		value: T;
 	}
+
+	/** Options for creating a `DropdownRow`. */
 	export interface Options<T> {
 		settings?: Gio.Settings;
 		items: { name: string; value: T }[];
@@ -1254,6 +1486,8 @@ export namespace DropdownRow {
 		noResetButton?: boolean;
 		onCreated?: (row: Adw.ComboRow) => void;
 	}
+
+	/** GObject class backing `Gio.ListStore` items in `DropdownRow`. */
 	export const Items = GObject.registerClass(
 		{
 			GTypeName: "offx1-pref-components-DropdownItems",
@@ -1279,6 +1513,12 @@ export namespace DropdownRow {
 // #endregion DropdownRow
 
 // #region ContributorsRow
+/**
+ * Creates an `Adw.ActionRow` displaying a horizontal grid of clickable contributor cards.
+ *
+ * @param row - List of contributor entries to render
+ * @returns The created `Adw.ActionRow`
+ */
 export function ContributorsRow(
 	row: ContributorsRow.Contributor[],
 ): Adw.ActionRow {
@@ -1338,6 +1578,7 @@ export function ContributorsRow(
 	return target;
 }
 export namespace ContributorsRow {
+	/** Metadata for a single contributor card in `ContributorsRow`. */
 	export interface Contributor {
 		name: string;
 		label: string;
@@ -1348,6 +1589,12 @@ export namespace ContributorsRow {
 // #endregion ContributorsRow
 
 // #region LicenseRow
+/**
+ * Creates an `Adw.ExpanderRow` for a third-party license entry, lazily loading license text on expand.
+ *
+ * @param item - License metadata and optional async content loader
+ * @returns The created `Adw.ExpanderRow`
+ */
 export function LicenseRow(item: LicenseRow.License): Adw.ExpanderRow {
 	const contentRow = item.content
 		? Row({
@@ -1406,6 +1653,7 @@ export function LicenseRow(item: LicenseRow.License): Adw.ExpanderRow {
 	);
 }
 export namespace LicenseRow {
+	/** License metadata for `LicenseRow`. */
 	export interface License {
 		url: string;
 		author: string;
@@ -1420,6 +1668,12 @@ export namespace LicenseRow {
 // #endregion LicenseRow
 
 // #region LogoBox
+/**
+ * Creates a centered vertical `Gtk.Box` displaying the extension icon, name, and version button.
+ *
+ * @param options - Logo icon, extension name, version string, and optional version click handler
+ * @returns The created `Gtk.Box`
+ */
 export function LogoBox({
 	icon,
 	name,
@@ -1463,6 +1717,7 @@ export function LogoBox({
 	return logoBox;
 }
 export namespace LogoBox {
+	/** Options for creating a `LogoBox`. */
 	export interface Options {
 		name: string;
 		version: string;
@@ -1473,6 +1728,12 @@ export namespace LogoBox {
 // #endregion LogoBox
 
 // #region LogoGroup
+/**
+ * Wraps a `LogoBox` inside an `Adw.PreferencesGroup` attached to `options.parent`.
+ *
+ * @param options - Logo box options plus parent `Adw.PreferencesPage`
+ * @returns The created `Adw.PreferencesGroup`
+ */
 export function LogoGroup(options: LogoGroup.Options): Adw.PreferencesGroup {
 	return Group(
 		{
@@ -1482,6 +1743,7 @@ export function LogoGroup(options: LogoGroup.Options): Adw.PreferencesGroup {
 	);
 }
 export namespace LogoGroup {
+	/** Options for creating a `LogoGroup`. */
 	export interface Options extends LogoBox.Options {
 		parent: Adw.PreferencesPage;
 	}
@@ -1489,6 +1751,12 @@ export namespace LogoGroup {
 // #endregion LogoGroup
 
 // #region ChangelogDialog
+/**
+ * Presents an `Adw.PreferencesDialog` listing parsed changelog releases and opening release notes on click.
+ *
+ * @param options - Changelog dialog options, build numbers, and async markdown loader
+ * @returns The presented `Adw.PreferencesDialog`
+ */
 export function ChangelogDialog({
 	content,
 	window,
@@ -1535,6 +1803,7 @@ export function ChangelogDialog({
 	return dialog;
 }
 export namespace ChangelogDialog {
+	/** Options for creating a `ChangelogDialog`. */
 	export interface Options {
 		window: Adw.PreferencesWindow;
 		currentBuildNumber: number;
@@ -1550,6 +1819,13 @@ export namespace ChangelogDialog {
 		`<span size="${100 + (8 - lv) * 2.5}%"><span alpha="50%">${"#".repeat(lv)} </span><span weight="bold">${t}</span></span>`;
 	const QUOTE = (t: string) =>
 		`<span size="90%" alpha="70%">&gt;　</span><span size="90%" alpha="75%">${t}</span>`;
+
+	/**
+	 * Converts a subset of Markdown (headings, lists, blockquotes, bold) into Pango markup.
+	 *
+	 * @param mdlike - Markdown-like release notes string
+	 * @returns Pango markup string
+	 */
 	export function simpleMarked(mdlike: string): string {
 		return mdlike
 			.split("\n")
@@ -1567,6 +1843,7 @@ export namespace ChangelogDialog {
 			)
 			.join("\n");
 	}
+	/** Parsed changelog release entry. */
 	export interface Release {
 		version: string;
 		content: string;
@@ -1575,6 +1852,13 @@ export namespace ChangelogDialog {
 		Date: string;
 		Git: string;
 	}
+
+	/**
+	 * Formats release metadata (Date, Git Hash, Build Number) as markdown blockquote lines.
+	 *
+	 * @param release - Partial release metadata
+	 * @returns Formatted header block
+	 */
 	export function createHeader(release: Partial<Release>): string {
 		return [
 			_("> **Date:** %s").format(release.Date ?? ""),
@@ -1582,6 +1866,13 @@ export namespace ChangelogDialog {
 			_("> **Build Number:** %d").format(release.BuildNumber ?? 0),
 		].join("\n");
 	}
+
+	/**
+	 * Parses a changelog markdown document into structured `Release` entries.
+	 *
+	 * @param content - Raw changelog markdown content
+	 * @returns Array of parsed `Release` objects
+	 */
 	export function getReleases(content: string): Release[] {
 		type Item = Partial<Release & { buffer: string[] }>;
 		const releases: Item[] = [];
@@ -1612,6 +1903,13 @@ export namespace ChangelogDialog {
 		}
 		return releases as Release[];
 	}
+	/**
+	 * Pushes a stacked navigation page rendering the formatted release notes for `release`.
+	 *
+	 * @param dialog - Parent `Adw.PreferencesDialog`
+	 * @param release - Release entry to display
+	 * @returns The pushed `Adw.NavigationPage`
+	 */
 	export function ChangelogPage(
 		dialog: Adw.PreferencesDialog,
 		release: Release,
@@ -1635,6 +1933,11 @@ export namespace ChangelogDialog {
 // #endregion ChangelogDialog
 
 // #region PaddingDialog
+/**
+ * Presents a floating popup dialog with spin rows for editing `[top, right, bottom, left]` padding in GSettings.
+ *
+ * @param options - Padding dialog configuration bound to a 4-element integer array (`ai`) key
+ */
 export function PaddingDialog({
 	settings,
 	sensitiveBind,
@@ -1722,6 +2025,7 @@ export function PaddingDialog({
 	});
 }
 export namespace PaddingDialog {
+	/** Options for creating a `PaddingDialog`. */
 	export interface Options {
 		settings: Gio.Settings;
 		window: Adw.PreferencesWindow;
