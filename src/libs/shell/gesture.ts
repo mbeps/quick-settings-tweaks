@@ -2,6 +2,12 @@ import Clutter from "gi://Clutter";
 import St from "gi://St";
 
 // #region Drag
+/**
+ * Mixin/base class that adds pointer and touch drag gesture handling to `St.Bin` widgets.
+ * Distinguishes between clicks and drags using `Drag.DragMinPixelSquare` and invokes
+ * `dfunc_drag_start`, `dfunc_drag_motion`, and `dfunc_drag_end` callbacks.
+ * Use `Drag.applyTo(WidgetClass)` to mix into existing GObject widget prototypes.
+ */
 export abstract class Drag extends St.Bin {
 	_dragging: boolean;
 	_dragIsClick: boolean;
@@ -10,8 +16,11 @@ export abstract class Drag extends St.Bin {
 	_grab: Clutter.Grab;
 	_grabbedDevice: Clutter.InputDevice;
 	_grabbedSequence: Clutter.EventSequence;
+	/** Optional callback invoked when a drag gesture ends. */
 	dfunc_drag_end: (event: Drag.Event) => void;
+	/** Optional callback invoked when a drag gesture starts. */
 	dfunc_drag_start: (event: Drag.Event) => void;
+	/** Optional callback invoked as the pointer or touch moves during a drag. */
 	dfunc_drag_motion: (event: Drag.Event) => void;
 
 	_dragStart(event: Clutter.Event): boolean {
@@ -124,6 +133,11 @@ export abstract class Drag extends St.Bin {
 		return Clutter.EVENT_PROPAGATE;
 	}
 
+	/**
+	 * Copies `Drag` prototype methods onto another widget class prototype.
+	 *
+	 * @param widgetClass - Target GObject widget constructor whose prototype receives drag handlers
+	 */
 	static applyTo(widgetClass: { prototype: object }) {
 		const widgetProto = widgetClass.prototype;
 		const dragProto = Drag.prototype;
@@ -135,6 +149,14 @@ export abstract class Drag extends St.Bin {
 			});
 		}
 	}
+
+	/**
+	 * Computes the squared Euclidean distance between two `[x, y]` coordinate pairs.
+	 *
+	 * @param coordsA - First coordinate pair
+	 * @param coordsB - Second coordinate pair
+	 * @returns Squared pixel distance between `coordsA` and `coordsB`
+	 */
 	static getCoordsDistanceSquare(
 		coordsA: Drag.Coords,
 		coordsB: Drag.Coords,
@@ -147,9 +169,13 @@ export abstract class Drag extends St.Bin {
 	}
 }
 export namespace Drag {
+	/** Minimum pointer movement in pixels before a press is treated as a drag rather than a click. */
 	export const DragMinPixel = 6;
+	/** Squared `DragMinPixel` threshold for distance comparisons without square roots. */
 	export const DragMinPixelSquare = DragMinPixel * DragMinPixel;
+	/** `[x, y]` stage coordinate tuple. */
 	export type Coords = [number, number];
+	/** `Clutter.Event` augmented with drag tracking metadata. */
 	export type Event = Clutter.Event & {
 		isClick: boolean;
 		moveStartCoords: Coords;
@@ -160,12 +186,21 @@ export namespace Drag {
 // #endregion Drag
 
 // #region Scroll
+/**
+ * Mixin/base class that adds smooth-scroll gesture tracking to `St.Bin` widgets.
+ * Accumulates scroll deltas across smooth scroll events (ignoring discrete wheel ticks)
+ * and invokes `dfunc_scroll_start`, `dfunc_scroll_motion`, and `dfunc_scroll_end`.
+ * Use `Scroll.applyTo(WidgetClass)` to mix into existing GObject widget prototypes.
+ */
 export abstract class Scroll extends St.Bin {
 	_scrollSumY: number;
 	_scrollSumX: number;
 	_scrolling: boolean;
+	/** Optional callback invoked when a smooth scroll gesture begins. */
 	dfunc_scroll_start: (event: Scroll.Event) => void;
+	/** Optional callback invoked as smooth scroll deltas arrive. */
 	dfunc_scroll_motion: (event: Scroll.Event) => void;
+	/** Optional callback invoked when a smooth scroll gesture finishes. */
 	dfunc_scroll_end: (event: Scroll.Event) => void;
 
 	vfunc_scroll_event(event: Clutter.Event): boolean {
@@ -222,6 +257,11 @@ export abstract class Scroll extends St.Bin {
 		return Clutter.EVENT_STOP;
 	}
 
+	/**
+	 * Copies `Scroll` prototype methods onto another widget class prototype.
+	 *
+	 * @param widgetClass - Target GObject widget constructor whose prototype receives scroll handlers
+	 */
 	static applyTo(widgetClass: { prototype: object }) {
 		const widgetProto = widgetClass.prototype;
 		const scrollProto = Scroll.prototype;
@@ -235,6 +275,7 @@ export abstract class Scroll extends St.Bin {
 	}
 }
 export namespace Scroll {
+	/** `Clutter.Event` augmented with cumulative and per-event scroll deltas. */
 	export type Event = Clutter.Event & {
 		scrollSumX: number;
 		scrollSumY: number;

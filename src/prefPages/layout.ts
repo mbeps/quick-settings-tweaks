@@ -27,6 +27,18 @@ import { ToggleOrderItem } from "../libs/types/toggleOrderItem.js";
 import type QstExtensionPreferences from "../prefs.js";
 
 // #region OrderGroup
+/**
+ * Builds a reorderable preferences group for managing ordered layout items.
+ * Supports adding, editing, hiding, reordering, and deleting items backed by GSettings.
+ *
+ * @param options - Configuration object for the order group
+ * @param options.page - Parent preferences page used to manage scroll-to-focus behaviour
+ * @param options.dialog - Parent preferences dialog used to present stacked edit pages and toasts
+ * @param options.bind - GSettings key storing the ordered item list
+ * @param options.sensitiveBind - GSettings boolean key controlling group sensitivity
+ * @param options.info - Adapter defining item matching, rendering, editing, and persistence
+ * @returns Configured Adwaita preferences group
+ */
 function OrderGroup<T extends OrderInfo.Base>({
 	page,
 	dialog,
@@ -362,6 +374,10 @@ namespace OrderInfo {
 }
 // #endregion OrderGroup
 
+/**
+ * OrderGroup adapter for managing Quick Settings toggle order and visibility items.
+ * Handles editing toggle matchers, hiding toggles, and persisting `ToggleOrderItem` lists.
+ */
 class ToggleOrderInfo extends OrderInfo<ToggleOrderItem> {
 	createEditLayout(
 		item: ToggleOrderItem,
@@ -529,6 +545,10 @@ class ToggleOrderInfo extends OrderInfo<ToggleOrderItem> {
 	}
 }
 
+/**
+ * OrderGroup adapter for managing panel system indicator order and visibility items.
+ * Handles editing indicator matchers, hiding indicators, and persisting `SystemIndicatorOrderItem` lists.
+ */
 class SystemIndicatorOrderInfo extends OrderInfo<SystemIndicatorOrderItem> {
 	createEditLayout(
 		item: SystemIndicatorOrderItem,
@@ -706,6 +726,14 @@ class SystemIndicatorOrderInfo extends OrderInfo<SystemIndicatorOrderItem> {
 // }
 
 // #region SystemItemOrderGroup
+/**
+ * Builds a preferences group for reordering built-in Quick Settings system items.
+ * Synchronises item order with the `system-items-layout-order` GSettings key.
+ *
+ * @param settings - GSettings instance for reading and writing system item order
+ * @param page - Parent preferences page used to manage scroll-to-focus behaviour
+ * @returns Configured Adwaita preferences group for system items
+ */
 function SystemItemOrderGroup(
 	settings: Gio.Settings,
 	page: Adw.PreferencesPage,
@@ -864,11 +892,22 @@ namespace SystemItemOrderGroup {
 }
 // #endregion SystemItemOrderGroup
 
+/**
+ * Preferences page for configuring Quick Settings layout, toggle ordering, system items, and date menu.
+ * Registered with GObject and added to the Adwaita preferences window.
+ */
 export const LayoutPage = GObject.registerClass(
 	{
 		GTypeName: `${Config.baseGTypeName}LayoutPage`,
 	},
 	class LayoutPage extends Adw.PreferencesPage {
+		/**
+		 * Constructs the Layout preferences page and populates toggle, system item, and date menu groups.
+		 *
+		 * @param settings - GSettings instance for reading and writing layout preferences
+		 * @param _prefs - Extension preferences controller (unused)
+		 * @param window - Parent preferences window used to present nested order dialogs
+		 */
 		constructor(
 			settings: Gio.Settings,
 			_prefs: QstExtensionPreferences,

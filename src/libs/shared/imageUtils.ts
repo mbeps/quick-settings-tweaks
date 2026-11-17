@@ -11,6 +11,14 @@ namespace ImageMeanColor {
 	const DIV = CHANNEL_DIFF_MAX_DOUBLE * MAX_DIST;
 	const CACHE_INDEXER_Y = BASE_SIZE;
 	const CACHE_SIZE = BASE_SIZE * BASE_SIZE;
+	/**
+	 * Computes the dominant vibrant color of a pixbuf asynchronously.
+	 * Scales the image to 128x128 and evaluates pixel "gravity" across idle frames
+	 * so the GNOME Shell main loop stays responsive.
+	 *
+	 * @param image - Source pixbuf to analyze
+	 * @returns Promise resolving to `[r, g, b]` of the dominant color, or `null` if fewer than 3 channels
+	 */
 	export function getImageMeanColor(
 		image: GdkPixbuf.Pixbuf,
 	): Promise<null | [number, number, number]> {

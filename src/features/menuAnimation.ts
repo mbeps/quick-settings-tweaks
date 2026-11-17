@@ -6,17 +6,36 @@ import type Maid from "../libs/shared/maid.js";
 import { FeatureBase, type SettingLoader } from "../libs/shell/feature.js";
 import { QuickSettingsMenuTracker } from "../libs/shell/quickSettingsUtils.js";
 
+/**
+ * Animates and blurs the Quick Settings background when a submenu opens or closes.
+ * Exists to provide visual depth and focus when overlay or submenus are active.
+ */
 export class MenuAnimation extends FeatureBase {
 	// #region settings
+	/** Whether menu open/close background animation is enabled. */
 	enabled: boolean;
+	/** Blur radius in pixels applied to the Quick Settings box pointer, or `0` to disable blur. */
 	backgroundBlurRadius: number;
+	/** Normalized brightness factor (`0`–`1`) for the blur effect. */
 	bakgroundBrightness: number;
+	/** Target opacity (`0`–`255`) for `QuickSettingsBox` while a submenu is open. */
 	backgroundOpacity: number;
+	/** Target horizontal scale factor for `QuickSettingsBox` while a submenu is open. */
 	backgroundScaleX: number;
+	/** Target vertical scale factor for `QuickSettingsBox` while a submenu is open. */
 	backgroundScaleY: number;
+	/** Target opacity (`0`–`255`) for `QuickSettingsGrid` while a submenu is open. */
 	gridContentOpacity: number;
+	/** Animation duration in milliseconds when opening a submenu. */
 	openDuration: number;
+	/** Animation duration in milliseconds when closing a submenu. */
 	closeDuration: number;
+
+	/**
+	 * Loads menu animation and blur settings from GSettings.
+	 *
+	 * @param loader - Setting loader bound to the extension schema
+	 */
 	override loadSettings(loader: SettingLoader): void {
 		this.enabled = loader.loadBoolean("menu-animation-enabled");
 		this.backgroundBlurRadius = loader.loadInt(
@@ -39,6 +58,13 @@ export class MenuAnimation extends FeatureBase {
 	}
 	// #endregion settings
 
+	/**
+	 * Animates `QuickSettingsBox`, `QuickSettingsGrid`, and the blur effect on submenu open/close.
+	 *
+	 * @param _maid - Cleanup maid for the open state
+	 * @param _menu - Submenu whose open state changed
+	 * @param isOpen - Whether the submenu is opening (`true`) or closing (`false`)
+	 */
 	onOpen(_maid: Maid, _menu: QuickSettingsMenu, isOpen: boolean) {
 		if (this.blur) this.blur.enabled = isOpen;
 		if (isOpen) {
@@ -74,8 +100,14 @@ export class MenuAnimation extends FeatureBase {
 		}
 	}
 
+	/** Blur effect attached to `QuickSettingsMenu._boxPointer`, if enabled. */
 	blur: Shell.BlurEffect;
+	/** Tracker monitoring Quick Settings submenu open/close events. */
 	tracker: QuickSettingsMenuTracker;
+
+	/**
+	 * Attaches the optional blur effect and starts the submenu tracker.
+	 */
 	override onLoad(): void {
 		if (!this.enabled) return;
 
@@ -96,6 +128,9 @@ export class MenuAnimation extends FeatureBase {
 		this.tracker.onMenuOpen = this.onOpen.bind(this);
 		this.tracker.load();
 	}
+	/**
+	 * Unloads the tracker, removes the blur effect, and resets box transforms.
+	 */
 	override onUnload(): void {
 		const tracker = this.tracker;
 		if (!tracker) return;

@@ -24,6 +24,10 @@ import { Drag, Scroll } from "../../libs/shell/gesture.js";
 import { StyledSlider } from "../../libs/shell/styler.js";
 
 // #region Player
+/**
+ * MPRIS D-Bus client representing a single media player instance.
+ * Exists to track playback metadata, position, and capabilities, and to dispatch transport controls.
+ */
 class Player extends GObject.Object {
 	private _playerProxy: Gio.DBusProxy;
 	private _propertiesProxy: Gio.DBusProxy;
@@ -312,6 +316,10 @@ GObject.registerClass(
 const DBusIface = loadInterfaceXML("org.freedesktop.DBus");
 const DBusProxy = Gio.DBusProxy.makeProxyWrapper(DBusIface);
 const MPRIS_PLAYER_PREFIX = "org.mpris.MediaPlayer2.";
+/**
+ * Discovers and tracks active MPRIS media players on the session D-Bus.
+ * Exists to emit player-added and player-removed events as media applications start or exit.
+ */
 class Source extends GObject.Object {
 	_players: Map<string, Player>;
 	_proxy: Gio.DBusProxy;
@@ -393,6 +401,10 @@ GObject.registerClass(
 // #endregion
 
 // #region ProgressControl
+/**
+ * Playback progress bar and elapsed/duration time labels for a `Player`.
+ * Exists to poll or interpolate track position and allow seeking via slider interaction.
+ */
 class ProgressControl extends St.BoxLayout {
 	_positionLabel: St.Label;
 	_lengthLabel: St.Label;
@@ -598,6 +610,10 @@ namespace ProgressControl {
 // #endregion ProgressControl
 
 // #region MediaItem
+/**
+ * Media card displaying album art, track metadata, transport buttons, and optional progress control.
+ * Exists to render a single MPRIS player's state and handle click/touch interactions.
+ */
 class MediaItem extends MessageList.Message {
 	// Gnome 48 doesn't exports MediaMessage, so we should implement it
 	// (i have no idea why, backward compatibility killer)
@@ -817,6 +833,10 @@ namespace MediaItem {
 // #endregion MediaItem
 
 // #region MediaList
+/**
+ * Horizontally paginated container of `MediaItem` cards with drag and scroll gestures.
+ * Exists to let users swipe or scroll between multiple active media players.
+ */
 class MediaList extends St.BoxLayout {
 	_options: MediaList.Options;
 	_current?: MediaItem;
@@ -1179,6 +1199,10 @@ namespace MediaList {
 // #endregion MediaList
 
 // #region Header
+/**
+ * Header bar displaying the media widget title and page indicator dots.
+ * Exists to show pagination state and allow jumping between `MediaList` pages.
+ */
 class Header extends St.BoxLayout {
 	_headerLabel: St.Label;
 	_pageIndicator: PageIndicators;
@@ -1242,6 +1266,10 @@ namespace Header {
 // #endregion Header
 
 // #region MediaWidget
+/**
+ * Top-level media widget combining `Header` and `MediaList` with empty-state handling.
+ * Exists to manage the overall media controls container inside Quick Settings.
+ */
 class MediaWidget extends St.BoxLayout {
 	_options: MediaWidget.Options;
 	_scroll: St.ScrollView;
@@ -1329,6 +1357,10 @@ namespace MediaWidget {
 // #endregion MediaWidget
 
 // #region MediaWidgetFeature
+/**
+ * Integrates the MPRIS media controls widget into the Quick Settings panel.
+ * Exists to mount `MediaWidget` in the grid, sync settings, and clean up on unload.
+ */
 export class MediaWidgetFeature extends FeatureBase {
 	// #region settings
 	enabled: boolean;
@@ -1350,6 +1382,11 @@ export class MediaWidgetFeature extends FeatureBase {
 	showNextButton: boolean;
 	showPrevButton: boolean;
 	showPauseButton: boolean;
+	/**
+	 * Loads media widget settings from GSettings.
+	 *
+	 * @param loader - Setting loader bound to the extension schema
+	 */
 	override loadSettings(loader: SettingLoader): void {
 		this.enabled = loader.loadBoolean("media-enabled");
 		this.header = loader.loadBoolean("media-show-header");
@@ -1397,6 +1434,11 @@ export class MediaWidgetFeature extends FeatureBase {
 	// #endregion settings
 
 	mediaWidget?: MediaWidget;
+	/**
+	 * Applies media widget option updates in place or triggers a full reload when required.
+	 *
+	 * @param key - GSettings key that changed
+	 */
 	override reload(key: string): void {
 		// Slider style
 		if (StyledSlider.Options.isStyleKey("media-progress", key)) {
@@ -1450,6 +1492,9 @@ export class MediaWidgetFeature extends FeatureBase {
 				break;
 		}
 	}
+	/**
+	 * Creates the `MediaWidget` and inserts it into `Global.QuickSettingsGrid` when enabled.
+	 */
 	override onLoad(): void {
 		if (!this.enabled) return;
 		this.mediaWidget = new MediaWidget(this);
@@ -1463,6 +1508,9 @@ export class MediaWidgetFeature extends FeatureBase {
 			2,
 		);
 	}
+	/**
+	 * Destroys the `MediaWidget` and clears its reference.
+	 */
 	override onUnload(): void {
 		this.mediaWidget = null;
 	}

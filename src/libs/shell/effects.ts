@@ -5,12 +5,28 @@ import Config from "../../config.js";
 import Global from "../../global.js";
 
 // #region RoundClipEffect
+/**
+ * Clutter shader effect that clips an actor to a squircle-smoothed rounded rectangle with an optional border.
+ * Uses the `media/rounded_corners.frag` fragment shader to render smooth anti-aliased corners
+ * that `St.Widget` CSS `border-radius` cannot clip for child textures such as album art.
+ */
 export class RoundClipEffect extends Clutter.ShaderEffect {
+	/**
+	 * Loads and returns the fragment shader snippet for rounded corner clipping.
+	 *
+	 * @returns Cogl fragment snippet loaded from `media/rounded_corners.frag`
+	 */
 	vfunc_get_static_snippet(): Cogl.Snippet {
 		const [declarations, code] = Global.GetShader("media/rounded_corners.frag");
 		return Cogl.Snippet.new(Cogl.SnippetHook.FRAGMENT, declarations, code);
 	}
 
+	/**
+	 * Resets the pipeline blend mode to default alpha blending before painting the target.
+	 *
+	 * @param node - Clutter paint node for the current frame
+	 * @param ctx - Clutter paint context
+	 */
 	vfunc_paint_target(node: Clutter.PaintNode, ctx: Clutter.PaintContext) {
 		// Reset to default blend string.
 		this.get_pipeline()?.set_blend(
@@ -31,6 +47,16 @@ export class RoundClipEffect extends Clutter.ShaderEffect {
 		this.set_uniform_value(name, gvalue);
 	}
 
+	/**
+	 * Updates shader uniforms for bounds, corner radius, smoothing, and border styling, then queues a repaint.
+	 * Call this whenever the actor's allocation, scale factor, or corner configuration changes.
+	 *
+	 * @param scale_factor - Display scale factor used to convert logical pixels to physical pixels
+	 * @param corners_cfg - Corner radius, squircle smoothing factor, and optional padding
+	 * @param outer_bounds - Actor bounding box in local coordinates
+	 * @param border - Optional border width and RGBA color
+	 * @param pixel_step - Optional inverse actor dimensions `[1/width, 1/height]`; derived from `this.actor` if omitted
+	 */
 	updateUniforms(
 		scale_factor: number,
 		corners_cfg: {

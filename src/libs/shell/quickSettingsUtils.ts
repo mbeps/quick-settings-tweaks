@@ -13,12 +13,27 @@ import {
 import Global from "../../global.js";
 import Maid from "../shared/maid.js";
 
+/**
+ * Base class for tracking dynamically added and removed children of a `St.Widget` container.
+ * Associates each tracked item of type `T` with a `Maid` for automatic per-item cleanup.
+ */
 export abstract class ChildrenTrackerBase<T> {
+	/** Map of tracked items to their per-item cleanup `Maid`. */
 	appliedChild: Map<T, Maid>;
+	/** Signal connection ID for `child-added` on `connectTarget`. */
 	addConnection: number;
+	/** Container widget whose children are being tracked. */
 	connectTarget: St.Widget;
+
+	/** Returns the `St.Widget` container to observe for child additions. */
 	protected abstract getConnectTarget(): St.Widget;
+
+	/** Processes a newly added or existing child actor. */
 	protected abstract catchChild(child: Clutter.Actor): void;
+
+	/**
+	 * Connects to `child-added` on the target container and processes all existing children.
+	 */
 	load(): void {
 		const connectTarget = this.getConnectTarget();
 		this.connectTarget = connectTarget;
@@ -32,6 +47,10 @@ export abstract class ChildrenTrackerBase<T> {
 		}
 		if (this.onUpdate) this.onUpdate();
 	}
+
+	/**
+	 * Destroys all per-item `Maid` instances and disconnects from the container.
+	 */
 	unload(): void {
 		for (const maid of this.appliedChild.values()) {
 			maid.destroy();
@@ -40,15 +59,27 @@ export abstract class ChildrenTrackerBase<T> {
 		this.addConnection = null;
 		this.appliedChild = null;
 	}
+
+	/**
+	 * Returns all currently tracked items.
+	 */
 	get items(): T[] {
 		if (!this.appliedChild) return [];
 		return [...this.appliedChild.keys()];
 	}
+
+	/** Optional callback invoked after initial load and whenever a child is added. */
 	onUpdate: () => void;
 }
 
+/**
+ * Tracks `QuickSettingsMenu` instances attached to children of `Global.QuickSettingsGrid`.
+ * Fires `onMenuCreated` when a menu is discovered and `onMenuOpen` when its open state changes.
+ */
 export class QuickSettingsMenuTracker extends ChildrenTrackerBase<QuickSettingsMenu> {
+	/** Callback invoked when a tracked menu's `open-state-changed` signal fires. */
 	onMenuOpen: (maid: Maid, menu: QuickSettingsMenu, isOpen: boolean) => void;
+	/** Callback invoked when a new `QuickSettingsMenu` is first tracked. */
 	onMenuCreated: (maid: Maid, menu: QuickSettingsMenu) => void;
 	protected override catchChild(child: Clutter.Actor): void {
 		const menu = (child as Clutter.Actor & { menu?: QuickSettingsMenu }).menu;
@@ -75,15 +106,23 @@ export class QuickSettingsMenuTracker extends ChildrenTrackerBase<QuickSettingsM
 	protected override getConnectTarget() {
 		return Global.QuickSettingsGrid;
 	}
+
+	/**
+	 * Returns all currently tracked `QuickSettingsMenu` instances.
+	 */
 	get menus() {
 		if (!this.appliedChild) return [];
 		return [...this.appliedChild.keys()];
 	}
 }
 
+/**
+ * Tracks `QuickToggle` and `QuickMenuToggle` instances inside `Global.QuickSettingsGrid`.
+ */
 export class QuickSettingsToggleTracker extends ChildrenTrackerBase<
 	QuickToggle | QuickMenuToggle
 > {
+	/** Callback invoked when a new toggle is first tracked. */
 	onToggleCreated: (maid: Maid, toggle: QuickToggle | QuickMenuToggle) => void;
 	protected override catchChild(child: Clutter.Actor): void {
 		if (!(child instanceof QuickToggle) && !(child instanceof QuickMenuToggle))
@@ -105,7 +144,11 @@ export class QuickSettingsToggleTracker extends ChildrenTrackerBase<
 	}
 }
 
+/**
+ * Tracks `SystemIndicator` instances inside `Global.Indicators`.
+ */
 export class SystemIndicatorTracker extends ChildrenTrackerBase<SystemIndicator> {
+	/** Callback invoked when a new `SystemIndicator` is first tracked. */
 	onIndicatorCreated: (maid: Maid, indicator: SystemIndicator) => void;
 	protected override catchChild(child: Clutter.Actor): void {
 		if (!(child instanceof SystemIndicator)) return;
@@ -126,6 +169,11 @@ export class SystemIndicatorTracker extends ChildrenTrackerBase<SystemIndicator>
 	}
 }
 
+/**
+ * Recalculates visibility for all `PopupSeparatorMenuItem` children in a `PopupMenuBase`.
+ *
+ * @param menu - Popup menu whose separators should be updated
+ */
 export function updateMenuSeparators(menu: PopupMenuBase) {
 	for (const item of menu._getMenuItems()) {
 		if (!(item instanceof PopupSeparatorMenuItem)) {

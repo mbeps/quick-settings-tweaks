@@ -17,11 +17,22 @@ import {
 } from "../libs/prefs/components.js";
 import type QstExtensionPreferences from "../prefs.js";
 
+/**
+ * Preferences page displaying extension metadata, changelog, license, contributors, and debug options.
+ * Registered with GObject and added to the Adwaita preferences window.
+ */
 export const AboutPage = GObject.registerClass(
 	{
 		GTypeName: `${Config.baseGTypeName}AboutPage`,
 	},
 	class AboutPage extends Adw.PreferencesPage {
+		/**
+		 * Constructs the About preferences page and populates logo, info, links, and debug groups.
+		 *
+		 * @param settings - GSettings instance for reading and writing extension preferences
+		 * @param prefs - Extension preferences controller providing metadata, version, and changelog helpers
+		 * @param window - Parent preferences window used to present modal dialogs
+		 */
 		constructor(
 			settings: Gio.Settings,
 			prefs: QstExtensionPreferences,

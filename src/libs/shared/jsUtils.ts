@@ -1,9 +1,24 @@
-// Lerp number
+/**
+ * Linearly interpolates between two numbers.
+ * Use for smooth animations, transitions, or progress-based blending.
+ *
+ * @param init - Starting value
+ * @param target - Ending value
+ * @param ratio - Interpolation factor (typically between 0 and 1)
+ * @returns Interpolated number
+ */
 export function lerp(init: number, target: number, ratio: number) {
 	return (target - init) * ratio + init;
 }
 
-// Perform a deep equal operation between too any js value
+/**
+ * Performs a deep structural equality check between two values.
+ * Handles primitives, `NaN`, `RegExp`, arrays, and plain objects.
+ *
+ * @param a - First value to compare
+ * @param b - Second value to compare
+ * @returns `true` if the values are deeply equal, `false` otherwise
+ */
 export function deepEqual(a: unknown, b: unknown): boolean {
 	if (a === b || (a == null && b == null)) return true;
 	const typeA = typeof a;

@@ -8,16 +8,34 @@ import Global from "../../global.js";
 import Logger from "../../libs/shared/logger.js";
 import { FeatureBase, type SettingLoader } from "../../libs/shell/feature.js";
 
+/**
+ * Customizes visibility and ordering of the Quick Settings system action bar items.
+ * Exists to hide individual buttons (screenshot, settings, lock, shutdown, battery) or the entire row, and reorder them.
+ */
 export class SystemItemsLayoutFeature extends FeatureBase {
 	// #region settings
+	/** Whether to hide the screenshot button. */
 	hideScreenshot: boolean;
+	/** Whether to hide the settings button. */
 	hideSettings: boolean;
+	/** Whether to hide the lock button. */
 	hideLock: boolean;
+	/** Whether to hide the shutdown/power-off button. */
 	hideShutdown: boolean;
+	/** Whether to hide the battery/power indicator toggle. */
 	hideBattery: boolean;
+	/** Whether to hide the entire system items row. */
 	hideLayout: boolean;
+	/** Whether system items layout customization is enabled. */
 	enabled: boolean;
+	/** Ordered list of item keys matching the object returned by `getItmes`. */
 	order: string[];
+
+	/**
+	 * Loads system items visibility and ordering settings from GSettings.
+	 *
+	 * @param loader - Setting loader bound to the extension schema
+	 */
 	override loadSettings(loader: SettingLoader): void {
 		this.hideScreenshot = loader.loadBoolean(
 			"system-items-layout-hide-screenshot",
@@ -32,6 +50,11 @@ export class SystemItemsLayoutFeature extends FeatureBase {
 	}
 	// #endregion settings
 
+	/**
+	 * Resolves and returns references to all system item actors and spacers.
+	 *
+	 * @returns Map of system item actors, spacers, and the parent `SystemItem` container
+	 */
 	async getItmes(): Promise<{
 		screenshot: QuickSettingsItem;
 		settings: QuickSettingsItem;
@@ -81,6 +104,9 @@ export class SystemItemsLayoutFeature extends FeatureBase {
 		};
 	}
 
+	/**
+	 * Applies visibility hiding and child reordering to the system items row.
+	 */
 	override onLoad() {
 		if (!this.enabled) return;
 		this.getItmes()
@@ -115,5 +141,8 @@ export class SystemItemsLayoutFeature extends FeatureBase {
 			})
 			.catch(Logger.error);
 	}
+	/**
+	 * Performs no-op teardown; `this.maid` restores hidden actors on unload.
+	 */
 	override onUnload(): void {}
 }

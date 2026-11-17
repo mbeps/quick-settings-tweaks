@@ -18,10 +18,18 @@ import Global from "./global.js";
 import Logger from "./libs/shared/logger.js";
 import type { FeatureBase } from "./libs/shell/feature.js";
 
+/**
+ * Main entry point for the Quick Settings Tweaks GNOME Shell extension.
+ * Manages the lifecycle of all extension features and the shared global context.
+ */
 export default class QstExtension extends Extension {
 	private features: FeatureBase[];
 	private debug: DebugFeature;
 
+	/**
+	 * Disables the extension and tears down all active features and global references.
+	 * Called by GNOME Shell when the extension is disabled or the session locks/ends.
+	 */
 	disable() {
 		Logger(`Extension ${this.metadata.name} deactivation started`);
 		const start = +Date.now();
@@ -43,6 +51,10 @@ export default class QstExtension extends Extension {
 		Logger(`Diabled. ${Date.now() - start}ms taken`);
 	}
 
+	/**
+	 * Enables the extension, initializes the global context, and loads all features.
+	 * Called by GNOME Shell when the extension is enabled.
+	 */
 	enable() {
 		// Load global context
 		Global.load(this);

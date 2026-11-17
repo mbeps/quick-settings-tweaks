@@ -15,13 +15,28 @@ import { WidgetsPage } from "./prefPages/widgets.js";
 
 var pageList = [WidgetsPage, LayoutPage, MenuPage, AboutPage];
 
+/**
+ * Preferences window entry point for the Quick Settings Tweaks extension.
+ * Registers icon paths, loads metadata assets, and populates Adwaita preference pages.
+ */
 export default class QstExtensionPreferences extends ExtensionPreferences {
+	/**
+	 * Adds a directory to the default GTK icon theme search path if not already present.
+	 *
+	 * @param path - Absolute filesystem path to the icon directory
+	 */
 	appendIconPath(path: string) {
 		const iconTheme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default());
 		if (!iconTheme.get_search_path().includes(path))
 			iconTheme.add_search_path(path);
 	}
 
+	/**
+	 * Reads and UTF-8 decodes a file relative to the extension root directory.
+	 *
+	 * @param path - Relative path to the file within the extension directory
+	 * @returns Decoded text contents of the file
+	 */
 	readExtensionFile(path: string) {
 		const decoder = new TextDecoder();
 		const file = Gio.File.new_for_path(`${this.path}/${path}`);
@@ -29,6 +44,11 @@ export default class QstExtensionPreferences extends ExtensionPreferences {
 		return decoder.decode(content);
 	}
 
+	/**
+	 * Loads contributor metadata and groups entries into rows of up to four items.
+	 *
+	 * @returns Two-dimensional array of contributor rows for the About page
+	 */
 	getContributorRows(): ContributorsRow.Contributor[][] {
 		const contributors = JSON.parse(
 			this.readExtensionFile("media/contributors/data.json"),
@@ -52,6 +72,11 @@ export default class QstExtensionPreferences extends ExtensionPreferences {
 		return rows;
 	}
 
+	/**
+	 * Loads third-party license metadata and attaches lazy file loaders for license texts.
+	 *
+	 * @returns Array of license entries with optional async content loaders
+	 */
 	getLicenses(): LicenseRow.License[] {
 		const licenses = JSON.parse(
 			this.readExtensionFile("media/licenses.json"),
@@ -64,6 +89,11 @@ export default class QstExtensionPreferences extends ExtensionPreferences {
 		return licenses;
 	}
 
+	/**
+	 * Formats the human-readable extension version and build channel string.
+	 *
+	 * @returns Formatted version string including release channel and build origin
+	 */
 	getVersionString(): string {
 		let version = Config.version.toUpperCase().replace(/-.*?$/, "");
 		if (this.metadata.version) {
@@ -85,10 +115,20 @@ export default class QstExtensionPreferences extends ExtensionPreferences {
 		return version;
 	}
 
+	/**
+	 * Reads the extension changelog markdown file.
+	 *
+	 * @returns Raw markdown contents of `media/Changelog.md`
+	 */
 	getChangelog(): string {
 		return this.readExtensionFile("media/Changelog.md");
 	}
 
+	/**
+	 * Populates the Adwaita preferences window with all extension preference pages.
+	 *
+	 * @param window - Adwaita preferences window instance to populate
+	 */
 	async fillPreferencesWindow(window: Adw.PreferencesWindow) {
 		const settings = this.getSettings();
 

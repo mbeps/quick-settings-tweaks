@@ -8,14 +8,30 @@ import { FeatureBase, type SettingLoader } from "../../libs/shell/feature.js";
 import { SystemIndicatorTracker } from "../../libs/shell/quickSettingsUtils.js";
 import { SystemIndicatorOrderItem } from "../../libs/types/systemIndicatorOrderItem.js";
 
+/**
+ * Customizes the visibility, ordering, and accent styling of top-bar system indicators.
+ * Exists to let users hide, reorder, and recolor privacy, screen-sharing, and recording indicators.
+ */
 export class SystemIndicatorLayoutFeature extends FeatureBase {
 	// #region settings
+	/** Whether custom indicator ordering and hiding is enabled. */
 	orderEnabled: boolean;
+	/** Ordered list of indicator rules, including the `nonOrdered` placeholder. */
 	order: SystemIndicatorOrderItem[];
+	/** Fallback rule applied to indicators not explicitly listed in `order`. */
 	unordered: SystemIndicatorOrderItem;
+	/** Visual style for the privacy indicator (`"default"`, `"monochrome"`, or `"accent"`). */
 	privacyIndicatorStyle: "default" | "monochrome" | "accent";
+	/** Whether to apply the accent style class to the screen-sharing indicator. */
 	accentScreenSharingIndicator: boolean;
+	/** Whether to apply the accent style class to the screen-recording indicator. */
 	accentScreenRecordingIndicator: boolean;
+
+	/**
+	 * Loads system indicator layout and styling settings from GSettings.
+	 *
+	 * @param loader - Setting loader bound to the extension schema
+	 */
 	override loadSettings(loader: SettingLoader): void {
 		this.orderEnabled = loader.loadBoolean("system-indicator-layout-enabled");
 		this.order = loader.loadValue("system-indicator-layout-order");
@@ -32,6 +48,12 @@ export class SystemIndicatorLayoutFeature extends FeatureBase {
 	}
 	// #endregion settings
 
+	/**
+	 * Hides a newly created indicator if its matching order rule specifies `hide`.
+	 *
+	 * @param maid - Cleanup maid tied to the indicator's lifecycle
+	 * @param indicator - Newly created `SystemIndicator` instance
+	 */
 	onIndicatorCreated(maid: Maid, indicator: SystemIndicator): void {
 		const rule: SystemIndicatorOrderItem =
 			this.order.find((item) =>
@@ -39,6 +61,10 @@ export class SystemIndicatorLayoutFeature extends FeatureBase {
 			) ?? this.unordered;
 		if (rule.hide) maid.hideJob(indicator);
 	}
+	/**
+	 * Reorders `Global.Indicators` children according to `this.order`.
+	 * Places items before `nonOrdered` at the head, unmatched items in the middle, and the rest at the tail.
+	 */
 	onUpdate(): void {
 		const children = Global.Indicators.get_children();
 		const head: SystemIndicator[] = [];
@@ -67,7 +93,12 @@ export class SystemIndicatorLayoutFeature extends FeatureBase {
 		}
 	}
 
+	/** Tracker monitoring `Global.Indicators` additions and layout updates. */
 	tracker: SystemIndicatorTracker;
+
+	/**
+	 * Applies indicator style classes and starts the indicator tracker if ordering is enabled.
+	 */
 	override onLoad(): void {
 		// Colored privacy indicator
 		const privacyIndicatorStyle = new StyleClass(Global.Indicators.style_class);
@@ -132,6 +163,9 @@ export class SystemIndicatorLayoutFeature extends FeatureBase {
 		this.tracker.onUpdate = this.onUpdate.bind(this);
 		this.tracker.load();
 	}
+	/**
+	 * Unloads the indicator tracker and clears its reference.
+	 */
 	override onUnload(): void {
 		const tracker = this.tracker;
 		if (tracker) {

@@ -43,12 +43,22 @@ function StreamSliderGetter(): StreamSlider | null {
 	};
 }
 
+/**
+ * Shared global registry holding references to GNOME Shell UI internals,
+ * extension settings, and cached D-Bus/shader resources.
+ * Initialized on extension enable via `Global.load` and cleared on disable via `Global.unload`.
+ */
 const Global = {
 	QuickSettings: null as Panel.QuickSettings,
 	QuickSettingsMenu: null as QuickSettingsMenu,
 	QuickSettingsGrid: null as St.Widget,
 	QuickSettingsBox: null as St.BoxLayout,
 	QuickSettingsActor: null as St.Widget,
+	/**
+	 * Resolves the GNOME Shell system indicator once it is available on the Quick Settings panel.
+	 *
+	 * @returns Promise resolving to the SystemIndicator instance
+	 */
 	get QuickSettingsSystemIndicator(): Promise<SystemIndicator> {
 		return new Promise((resolve) => {
 			let system = Global.QuickSettings._system;
@@ -64,6 +74,11 @@ const Global = {
 			});
 		});
 	},
+	/**
+	 * Resolves the GNOME Shell system item from the Quick Settings system indicator.
+	 *
+	 * @returns Promise resolving to the SystemItem instance
+	 */
 	get QuickSettingsSystemItem(): Promise<SystemItem> {
 		return Global.QuickSettingsSystemIndicator.then(
 			(system) => system._systemItem,
@@ -88,6 +103,11 @@ const Global = {
 		return (Global.DateMenu as DateMenuWithIndicator)._indicator;
 	},
 
+	/**
+	 * Resolves the shutdown menu box actor once the system indicator is initialized.
+	 *
+	 * @returns Promise resolving to the system item menu box actor
+	 */
 	GetShutdownMenuBox(): Promise<Clutter.Actor> {
 		// To prevent freeze, priority should be PRIORITY_DEFAULT_IDLE instead of PRIORITY_DEFAULT
 		return new Promise((resolve) => {
@@ -99,6 +119,11 @@ const Global = {
 		});
 	},
 
+	/**
+	 * Resolves the volume input/output stream sliders once initialized in Quick Settings.
+	 *
+	 * @returns Promise resolving to the StreamSlider references
+	 */
 	GetStreamSlider(): Promise<StreamSlider> {
 		return new Promise((resolve) => {
 			let streamSlider = StreamSliderGetter();
@@ -115,6 +140,13 @@ const Global = {
 		});
 	},
 
+	/**
+	 * Loads and caches a D-Bus interface definition from an XML file in the extension directory.
+	 *
+	 * @param path - Relative path to the D-Bus introspection XML file
+	 * @param interfaceName - Name of the D-Bus interface to look up
+	 * @returns Parsed D-Bus interface info, or null if not found
+	 */
 	GetDbusInterface(path: string, interfaceName: string) {
 		let cachedInfo = DBusFiles.get(path);
 		if (!cachedInfo) {
@@ -129,6 +161,12 @@ const Global = {
 		return cachedInfo.lookup_interface(interfaceName);
 	},
 
+	/**
+	 * Loads, parses, and caches a GLSL shader file into declarations and main body segments.
+	 *
+	 * @param path - Relative path to the shader file within the extension directory
+	 * @returns Tuple containing `[declarations, mainBody]`
+	 */
 	GetShader(path: string): [string, string] {
 		let cachedInfo = Shaders.get(path);
 		if (!cachedInfo) {
@@ -147,6 +185,9 @@ const Global = {
 		return cachedInfo;
 	},
 
+	/**
+	 * Clears all cached GNOME Shell references, settings, and resource maps on extension disable.
+	 */
 	unload() {
 		Global.QuickSettings = null;
 		Global.QuickSettingsMenu = null;
@@ -165,6 +206,11 @@ const Global = {
 		Shaders = null;
 		Decoder = null;
 	},
+	/**
+	 * Initializes global references to GNOME Shell UI components, settings, and resource caches.
+	 *
+	 * @param extension - Active extension instance
+	 */
 	load(extension: Extension) {
 		Global.Extension = extension;
 		Global.Settings = extension.getSettings();
