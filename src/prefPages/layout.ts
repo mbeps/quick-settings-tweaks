@@ -978,7 +978,7 @@ export const LayoutPage = GObject.registerClass(
 						bind: "system-indicator-privacy-indicator-style",
 						title: _("Privacy indicators style"),
 						subtitle: _(
-							"Use monochrome or shell accent color on privarcy indicators",
+							"Use monochrome or shell accent color on privacy indicators",
 						),
 						items: [
 							{ name: _("Default"), value: "default" },
