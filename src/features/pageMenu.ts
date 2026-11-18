@@ -196,11 +196,7 @@ export class PageMenu extends FeatureBase {
 			"notify::allocation",
 			syncOffsets,
 		);
-		this.maid.connectJob(
-			Global.QuickSettingsBox,
-			"style-changed",
-			syncOffsets,
-		);
+		this.maid.connectJob(Global.QuickSettingsBox, "style-changed", syncOffsets);
 		this.maid.connectJob(boxPointer.bin, "notify::x", syncOffsets);
 		this.maid.connectJob(boxPointer.bin, "notify::y", syncOffsets);
 		this.maid.connectJob(boxPointer.bin, "notify::allocation", syncOffsets);
@@ -353,7 +349,8 @@ export class PageMenu extends FeatureBase {
 
 	private getSlideOffset(width: number): number {
 		const isRtl =
-			Global.QuickSettingsBox.get_text_direction() === Clutter.TextDirection.RTL;
+			Global.QuickSettingsBox.get_text_direction() ===
+			Clutter.TextDirection.RTL;
 		return isRtl ? -width : width;
 	}
 
@@ -435,10 +432,7 @@ export class PageMenu extends FeatureBase {
 		return grid.get_preferred_width(-1)[1];
 	}
 
-	private activatePageSizer(
-		menu: TrackedSubmenu,
-		gridWidth: number,
-	): void {
+	private activatePageSizer(menu: TrackedSubmenu, gridWidth: number): void {
 		if (!this.pageSizer || !this.overlayWidthBind || !this.overlayHeightBind)
 			return;
 		this.pageSizer.width = gridWidth;
