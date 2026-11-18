@@ -6,6 +6,7 @@ import Gtk from "gi://Gtk";
 import { gettext as _ } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 import Config from "../config.js";
 import {
+	AdjustmentRow,
 	Button,
 	Dialog,
 	DialogRow,
@@ -949,6 +950,90 @@ export const LayoutPage = GObject.registerClass(
 						title: _("Ordering and Hiding"),
 						subtitle: _("Reorder and hide quick toggles"),
 						experimental: true,
+					}),
+					SwitchRow({
+						bind: "toggles-pagination-enabled",
+						settings,
+						onDetailed: () => {
+							Dialog({
+								window,
+								childrenRequest: () => [
+									Group(
+										{
+											title: _("Pagination"),
+											description: _("Configure quick toggles pagination"),
+										},
+										[
+											AdjustmentRow({
+												settings,
+												bind: "toggles-pagination-max-per-page",
+												sensitiveBind: "toggles-pagination-enabled",
+												min: 2,
+												max: 20,
+												stepIncrement: 2,
+												pageIncrement: 2,
+												title: _("Max tiles per page"),
+												subtitle: _(
+													"Number of quick toggle tiles per page (multiples of 2)",
+												),
+												onCreated: (row) => {
+													row.connect("notify::value", () => {
+														const val = row.get_value();
+														const snapped = Math.max(
+															2,
+															Math.round(val / 2) * 2,
+														);
+														if (val !== snapped) row.set_value(snapped);
+													});
+												},
+											}),
+											DropdownRow({
+												settings,
+												bind: "toggles-pagination-orientation",
+												sensitiveBind: "toggles-pagination-enabled",
+												title: _("Scroll direction"),
+												items: [
+													{ name: _("Vertical"), value: "vertical" },
+													{ name: _("Horizontal"), value: "horizontal" },
+												],
+											}),
+											SwitchRow({
+												settings,
+												bind: "toggles-pagination-show-page-buttons",
+												sensitiveBind: "toggles-pagination-enabled",
+												title: _("Show page buttons"),
+												subtitle: _(
+													"Show previous and next buttons next to page indicator dots",
+												),
+											}),
+											SwitchRow({
+												settings,
+												bind: "toggles-pagination-wrap-around",
+												sensitiveBind: "toggles-pagination-enabled",
+												title: _("Wrap around pages"),
+												subtitle: _(
+													"Loop from the last page back to the first page",
+												),
+											}),
+											AdjustmentRow({
+												settings,
+												bind: "toggles-pagination-smooth-scroll-speed",
+												sensitiveBind: "toggles-pagination-enabled",
+												min: -2048,
+												max: 2048,
+												title: _("Smooth scroll speed"),
+												subtitle: _(
+													"Adjust touchpad scroll speed, negative number to invert direction",
+												),
+											}),
+										],
+									),
+								],
+								title: _("Pagination"),
+							});
+						},
+						title: _("Pagination"),
+						subtitle: _("Split quick toggles into scrollable pages"),
 					}),
 				],
 			);

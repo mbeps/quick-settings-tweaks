@@ -1,0 +1,39 @@
+@use "../global.scss" as *;
+
+#{$p}-toggles-pagination {
+	spacing: 6px;
+
+	.page-indicators {
+		spacing: 6px;
+		margin: 0px;
+
+		.page-indicator {
+			width: 8px;
+			height: 8px;
+			padding: 2px;
+		}
+	}
+
+	#{$p}-toggles-page-button {
+		width: 16px;
+		height: 16px;
+		padding: 0px;
+		border-radius: 99px;
+
+		StIcon {
+			icon-size: 12px;
+		}
+
+		&:hover {
+			background-color: rgba(255, 255, 255, 0.12);
+		}
+	}
+
+	&.vertical {
+		spacing: 4px;
+	}
+
+	&.horizontal {
+		spacing: 6px;
+	}
+}

@@ -22,6 +22,8 @@ export abstract class ChildrenTrackerBase<T> {
 	appliedChild: Map<T, Maid>;
 	/** Signal connection ID for `child-added` on `connectTarget`. */
 	addConnection: number;
+	/** Signal connection ID for `child-removed` on `connectTarget`. */
+	removeConnection: number;
 	/** Container widget whose children are being tracked. */
 	connectTarget: St.Widget;
 
@@ -32,7 +34,7 @@ export abstract class ChildrenTrackerBase<T> {
 	protected abstract catchChild(child: Clutter.Actor): void;
 
 	/**
-	 * Connects to `child-added` on the target container and processes all existing children.
+	 * Connects to `child-added` and `child-removed` on the target container and processes all existing children.
 	 */
 	load(): void {
 		const connectTarget = this.getConnectTarget();
@@ -40,6 +42,9 @@ export abstract class ChildrenTrackerBase<T> {
 		this.appliedChild = new Map();
 		this.addConnection = connectTarget.connect("child-added", (_, child) => {
 			this.catchChild(child);
+			if (this.onUpdate) this.onUpdate();
+		});
+		this.removeConnection = connectTarget.connect("child-removed", () => {
 			if (this.onUpdate) this.onUpdate();
 		});
 		for (const child of connectTarget.get_children()) {
@@ -56,7 +61,9 @@ export abstract class ChildrenTrackerBase<T> {
 			maid.destroy();
 		}
 		this.connectTarget.disconnect(this.addConnection);
+		this.connectTarget.disconnect(this.removeConnection);
 		this.addConnection = null;
+		this.removeConnection = null;
 		this.appliedChild = null;
 	}
 
@@ -135,6 +142,9 @@ export class QuickSettingsToggleTracker extends ChildrenTrackerBase<
 		});
 		toggleMaid.connectJob(child, "destroy", () => {
 			toggleMaid.destroy();
+		});
+		toggleMaid.connectJob(child, "notify::visible", () => {
+			if (this.onUpdate) this.onUpdate();
 		});
 		if (this.onToggleCreated) this.onToggleCreated(toggleMaid, child);
 		this.appliedChild.set(child, toggleMaid);
