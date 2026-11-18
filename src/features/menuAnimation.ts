@@ -14,6 +14,8 @@ export class MenuAnimation extends FeatureBase {
 	// #region settings
 	/** Whether menu open/close background animation is enabled. */
 	enabled: boolean;
+	/** Active submenu presentation mode (`"default"`, `"overlay"`, or `"page"`). */
+	submenuMode: string;
 	/** Blur radius in pixels applied to the Quick Settings box pointer, or `0` to disable blur. */
 	backgroundBlurRadius: number;
 	/** Normalized brightness factor (`0`–`1`) for the blur effect. */
@@ -38,6 +40,7 @@ export class MenuAnimation extends FeatureBase {
 	 */
 	override loadSettings(loader: SettingLoader): void {
 		this.enabled = loader.loadBoolean("menu-animation-enabled");
+		this.submenuMode = loader.loadString("submenu-mode");
 		this.backgroundBlurRadius = loader.loadInt(
 			"menu-animation-background-blur-radius",
 		);
@@ -109,7 +112,7 @@ export class MenuAnimation extends FeatureBase {
 	 * Attaches the optional blur effect and starts the submenu tracker.
 	 */
 	override onLoad(): void {
-		if (!this.enabled) return;
+		if (!this.enabled || this.submenuMode === "page") return;
 
 		if (this.backgroundBlurRadius) {
 			this.blur = new Shell.BlurEffect({

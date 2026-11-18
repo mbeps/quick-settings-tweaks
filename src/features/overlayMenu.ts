@@ -1,4 +1,5 @@
 import Clutter from "gi://Clutter";
+import { PopupAnimation } from "resource:///org/gnome/shell/ui/boxpointer.js";
 import {
 	type QuickSettingsMenu,
 	QuickSlider,
@@ -15,8 +16,6 @@ import { QuickSettingsMenuTracker } from "../libs/shell/quickSettingsUtils.js";
  */
 export class OverlayMenu extends FeatureBase {
 	// #region settings
-	/** Whether the overlay menu layout is enabled. */
-	enabled: boolean;
 	/** Fixed width in pixels for overlay menus, or `0` to keep default width. */
 	width: number;
 	/** Open animation duration in milliseconds, or `0` to disable animation. */
@@ -32,7 +31,6 @@ export class OverlayMenu extends FeatureBase {
 	 * @param loader - Setting loader bound to the extension schema
 	 */
 	override loadSettings(loader: SettingLoader): void {
-		this.enabled = loader.loadBoolean("overlay-menu-enabled");
 		this.width = loader.loadInt("overlay-menu-width");
 		this.duration = loader.loadInt("overlay-menu-animate-duration");
 		this.animationStyle = loader.loadString("overlay-menu-animate-style");
@@ -208,8 +206,6 @@ export class OverlayMenu extends FeatureBase {
 	 * Replaces default overlay constraints and starts the submenu tracker.
 	 */
 	override onLoad(): void {
-		if (!this.enabled) return;
-
 		// Offset handle for Y
 		this.yconstraint = new Clutter.BindConstraint({
 			coordinate: Clutter.BindCoordinate.Y,
@@ -243,7 +239,19 @@ export class OverlayMenu extends FeatureBase {
 		const tracker = this.tracker;
 		if (!tracker) return;
 		this.tracker = null;
+		const activeMenu = (
+			Global.QuickSettingsMenu as unknown as {
+				_activeMenu?: { close: (animate?: PopupAnimation) => void };
+			}
+		)._activeMenu;
+		activeMenu?.close(PopupAnimation.NONE);
 		for (const menu of tracker.items) {
+			menu.box.remove_all_transitions();
+			menu.box.translation_x = 0;
+			menu.box.translation_y = 0;
+			menu.box.scale_x = 1;
+			menu.box.scale_y = 1;
+			menu.box.opacity = 255;
 			menu.actor.x_expand = true;
 			menu.actor.get_constraints()[0].enabled = true;
 		}
