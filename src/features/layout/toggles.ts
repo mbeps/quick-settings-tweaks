@@ -291,13 +291,19 @@ export class TogglesLayoutFeature extends FeatureBase {
 	private inactiveToggles: PaginatedToggle[] = [];
 	private toggleRows = new WeakSet<Clutter.Actor[]>();
 	private currentPage = 0;
+	private toggleBlockX1 = 0;
+	private toggleBlockClipY1 = 0;
+	private toggleBlockWidth = 0;
 	private toggleBlockY1 = 0;
 	private toggleBlockY2 = 0;
+	private clipListeners = new Map<PaginatedToggle, [number, number, number]>();
 
 	private lastWheelTimeUs = 0;
 	private pressCoords: [number, number] | null = null;
 	private swipeActive = false;
 	private pressedToggle: PaginatedToggle | null = null;
+	private activePressIsTouch = false;
+	private activeTouchSequence: Clutter.EventSequence | null = null;
 	private disabledActions: Clutter.Action[] = [];
 	private restoreActionsIdleId: number | null = null;
 	private smoothScrollActive = false;
@@ -384,6 +390,12 @@ export class TogglesLayoutFeature extends FeatureBase {
 			this.tracker = null;
 		}
 		this.resetDragState();
+		this.toggleBlockX1 = 0;
+		this.toggleBlockClipY1 = 0;
+		this.toggleBlockWidth = 0;
+		this.toggleBlockY1 = 0;
+		this.toggleBlockY2 = 0;
+		this.clearToggleClips();
 		if (Global.QuickSettingsGrid) {
 			for (const child of Global.QuickSettingsGrid.get_children()) {
 				if (this.isToggleActor(child)) {
@@ -643,8 +655,12 @@ export class TogglesLayoutFeature extends FeatureBase {
 	 * Resets region bounds and restores toggle visibility/reactivity when only one page exists.
 	 */
 	onUnpaginatedAllocate(): void {
+		this.toggleBlockX1 = 0;
+		this.toggleBlockClipY1 = 0;
+		this.toggleBlockWidth = 0;
 		this.toggleBlockY1 = 0;
 		this.toggleBlockY2 = 0;
+		this.clearToggleClips();
 		for (const toggle of this.pages[0] ?? []) {
 			toggle.reactive = true;
 			if (toggle.get_transition("opacity") === null) {
@@ -679,6 +695,10 @@ export class TogglesLayoutFeature extends FeatureBase {
 		const rows = layout._getRows(container);
 		const zeroBox = new Clutter.ActorBox({ x1: 0, y1: 0, x2: 0, y2: 0 });
 		for (const toggle of this.inactiveToggles) {
+			toggle.remove_all_transitions();
+			toggle.translation_x = 0;
+			toggle.translation_y = 0;
+			toggle.remove_clip();
 			toggle.allocate(zeroBox);
 			toggle.opacity = 0;
 			toggle.reactive = false;
@@ -764,8 +784,15 @@ export class TogglesLayoutFeature extends FeatureBase {
 			}
 		}
 
+		this.toggleBlockX1 = box.x1;
+		this.toggleBlockClipY1 = toggleY1;
+		this.toggleBlockWidth = box.get_width();
 		this.toggleBlockY1 = toggleY1 - box.y1;
 		this.toggleBlockY2 = toggleY2 - box.y1;
+		for (const toggle of this.pages[this.currentPage] ?? []) {
+			this.ensureClipListeners(toggle);
+			this.updateToggleClip(toggle);
+		}
 		this.allocatePaginationBar(
 			box,
 			box.get_width(),
@@ -855,6 +882,7 @@ export class TogglesLayoutFeature extends FeatureBase {
 				: direction * HORIZONTAL_OFFSET_PX;
 
 		for (const toggle of incoming) {
+			this.ensureClipListeners(toggle);
 			toggle.remove_all_transitions();
 			toggle.opacity = 0;
 			if (this.orientation === "vertical") {
@@ -864,6 +892,7 @@ export class TogglesLayoutFeature extends FeatureBase {
 				toggle.translation_x = offsetPx;
 				toggle.translation_y = 0;
 			}
+			this.updateToggleClip(toggle);
 			toggle.ease({
 				opacity: 255,
 				translationX: 0,
@@ -918,6 +947,7 @@ export class TogglesLayoutFeature extends FeatureBase {
 		const opacity = Math.round(255 - (255 - 110) * ratio);
 
 		for (const toggle of this.pages[this.currentPage] ?? []) {
+			this.ensureClipListeners(toggle);
 			toggle.remove_all_transitions();
 			toggle.opacity = opacity;
 			if (this.orientation === "vertical") {
@@ -926,6 +956,67 @@ export class TogglesLayoutFeature extends FeatureBase {
 			} else {
 				toggle.translation_x = damped;
 				toggle.translation_y = 0;
+			}
+			this.updateToggleClip(toggle);
+		}
+	}
+
+	private updateToggleClip(toggle: PaginatedToggle): void {
+		if (
+			this.toggleBlockWidth <= 0 ||
+			this.toggleBlockY2 <= this.toggleBlockY1 ||
+			(toggle.translation_x === 0 && toggle.translation_y === 0)
+		) {
+			toggle.remove_clip();
+			return;
+		}
+		const alloc = toggle.get_allocation_box();
+		const xoff = this.toggleBlockX1 - alloc.x1 - toggle.translation_x;
+		const yoff = this.toggleBlockClipY1 - alloc.y1 - toggle.translation_y;
+		toggle.set_clip(
+			xoff,
+			yoff,
+			this.toggleBlockWidth,
+			this.toggleBlockY2 - this.toggleBlockY1,
+		);
+	}
+
+	private ensureClipListeners(toggle: PaginatedToggle): void {
+		if (this.clipListeners.has(toggle)) return;
+		const txId = toggle.connect("notify::translation-x", () => {
+			this.updateToggleClip(toggle);
+		});
+		const tyId = toggle.connect("notify::translation-y", () => {
+			this.updateToggleClip(toggle);
+		});
+		const destroyId = toggle.connect("destroy", () => {
+			this.disconnectToggleClipListeners(toggle);
+		});
+		this.clipListeners.set(toggle, [txId, tyId, destroyId]);
+	}
+
+	private disconnectToggleClipListeners(toggle: PaginatedToggle): void {
+		const ids = this.clipListeners.get(toggle);
+		if (!ids) return;
+		this.clipListeners.delete(toggle);
+		for (const id of ids) {
+			toggle.disconnect(id);
+		}
+	}
+
+	private clearToggleClips(): void {
+		for (const [toggle, ids] of this.clipListeners) {
+			for (const id of ids) {
+				toggle.disconnect(id);
+			}
+			toggle.remove_clip();
+		}
+		this.clipListeners.clear();
+		if (Global.QuickSettingsGrid) {
+			for (const child of Global.QuickSettingsGrid.get_children()) {
+				if (this.isToggleActor(child)) {
+					child.remove_clip();
+				}
 			}
 		}
 	}
@@ -947,12 +1038,15 @@ export class TogglesLayoutFeature extends FeatureBase {
 		this.snapActiveToggles();
 	}
 
-	private resetDragState(): void {
+	private clearPressState(): void {
 		this.pressCoords = null;
 		this.swipeActive = false;
 		this.pressedToggle = null;
-		this.smoothScrollActive = false;
-		this.smoothScrollAccum = 0;
+		this.activePressIsTouch = false;
+		this.activeTouchSequence = null;
+	}
+
+	private restoreDisabledActionsNow(): void {
 		if (this.restoreActionsIdleId !== null) {
 			GLib.source_remove(this.restoreActionsIdleId);
 			this.restoreActionsIdleId = null;
@@ -961,12 +1055,37 @@ export class TogglesLayoutFeature extends FeatureBase {
 			action.enabled = true;
 		}
 		this.disabledActions = [];
+	}
+
+	private scheduleRestoreDisabledActions(): void {
+		if (
+			this.disabledActions.length === 0 ||
+			this.restoreActionsIdleId !== null
+		) {
+			return;
+		}
+		this.restoreActionsIdleId = GLib.idle_add(
+			GLib.PRIORITY_DEFAULT_IDLE,
+			() => {
+				this.restoreActionsIdleId = null;
+				this.restoreDisabledActionsNow();
+				return GLib.SOURCE_REMOVE;
+			},
+		);
+	}
+
+	private resetDragState(): void {
+		this.clearPressState();
+		this.smoothScrollActive = false;
+		this.smoothScrollAccum = 0;
+		this.restoreDisabledActionsNow();
 
 		for (const toggle of this.pages[this.currentPage] ?? []) {
 			toggle.remove_all_transitions();
 			toggle.opacity = 255;
 			toggle.translation_x = 0;
 			toggle.translation_y = 0;
+			toggle.remove_clip();
 		}
 	}
 
@@ -1028,10 +1147,14 @@ export class TogglesLayoutFeature extends FeatureBase {
 		_actor: Clutter.Actor,
 		event: Clutter.Event,
 	): boolean {
-		if (this.pages.length <= 1) return Clutter.EVENT_PROPAGATE;
 		const activeMenu = (Global.QuickSettingsMenu as unknown as ActiveMenuHost)
 			._activeMenu;
-		if (activeMenu?.isOpen) return Clutter.EVENT_PROPAGATE;
+		if (this.pages.length <= 1 || activeMenu?.isOpen) {
+			if (this.pressCoords !== null) {
+				this.cancelDrag();
+			}
+			return Clutter.EVENT_PROPAGATE;
+		}
 
 		const type = event.type();
 		const [x, y] = event.get_coords();
@@ -1047,29 +1170,73 @@ export class TogglesLayoutFeature extends FeatureBase {
 			type === Clutter.EventType.BUTTON_PRESS ||
 			type === Clutter.EventType.TOUCH_BEGIN
 		) {
-			if (!this.isPointInToggleRegion(x, y) || this.hasBlockedAncestor(x, y)) {
+			if (
+				type === Clutter.EventType.BUTTON_PRESS &&
+				(event.is_pointer_emulated() ||
+					event.get_button() !== Clutter.BUTTON_PRIMARY)
+			) {
 				return Clutter.EVENT_PROPAGATE;
+			}
+			if (
+				this.pressCoords !== null ||
+				!this.isPointInToggleRegion(x, y) ||
+				this.hasBlockedAncestor(x, y)
+			) {
+				return Clutter.EVENT_PROPAGATE;
+			}
+			if (this.restoreActionsIdleId !== null) {
+				this.restoreDisabledActionsNow();
 			}
 			this.pressCoords = [x, y];
 			this.swipeActive = false;
 			this.pressedToggle = this.findToggleAtPos(x, y);
+			this.activePressIsTouch = type === Clutter.EventType.TOUCH_BEGIN;
+			this.activeTouchSequence = this.activePressIsTouch
+				? event.get_event_sequence()
+				: null;
 			// Never return EVENT_STOP on press/touch_begin so St.Button's ClickGesture stays intact
 			return Clutter.EVENT_PROPAGATE;
 		}
 
-		if (
-			type === Clutter.EventType.MOTION ||
-			type === Clutter.EventType.TOUCH_UPDATE
-		) {
+		if (this.pressCoords === null) {
+			return Clutter.EVENT_PROPAGATE;
+		}
+
+		if (type === Clutter.EventType.MOTION) {
+			if (this.activePressIsTouch || event.is_pointer_emulated()) {
+				return Clutter.EVENT_PROPAGATE;
+			}
 			return this.handleDragMotion(x, y);
 		}
 
+		if (type === Clutter.EventType.BUTTON_RELEASE) {
+			if (
+				this.activePressIsTouch ||
+				event.is_pointer_emulated() ||
+				event.get_button() !== Clutter.BUTTON_PRIMARY
+			) {
+				return Clutter.EVENT_PROPAGATE;
+			}
+			return this.finishDrag(x, y, false);
+		}
+
 		if (
-			type === Clutter.EventType.BUTTON_RELEASE ||
+			type === Clutter.EventType.TOUCH_UPDATE ||
 			type === Clutter.EventType.TOUCH_END ||
 			type === Clutter.EventType.TOUCH_CANCEL
 		) {
-			return this.handleDragRelease(x, y);
+			if (!this.activePressIsTouch) return Clutter.EVENT_PROPAGATE;
+			if (
+				this.activeTouchSequence &&
+				event.get_event_sequence()?.get_slot() !==
+					this.activeTouchSequence.get_slot()
+			) {
+				return Clutter.EVENT_PROPAGATE;
+			}
+			if (type === Clutter.EventType.TOUCH_UPDATE) {
+				return this.handleDragMotion(x, y);
+			}
+			return this.finishDrag(x, y, type === Clutter.EventType.TOUCH_CANCEL);
 		}
 
 		return Clutter.EVENT_PROPAGATE;
@@ -1168,35 +1335,31 @@ export class TogglesLayoutFeature extends FeatureBase {
 		return Clutter.EVENT_STOP;
 	}
 
-	private handleDragRelease(x: number, y: number): boolean {
+	private finishDrag(x: number, y: number, cancelled: boolean): boolean {
 		if (!this.pressCoords) return Clutter.EVENT_PROPAGATE;
 		const wasSwipe = this.swipeActive;
 		const [sx, sy] = this.pressCoords;
 		const offset = this.orientation === "vertical" ? y - sy : x - sx;
 
-		this.pressCoords = null;
-		this.swipeActive = false;
-		this.pressedToggle = null;
+		this.clearPressState();
+		this.scheduleRestoreDisabledActions();
 
-		if (this.disabledActions.length > 0 && this.restoreActionsIdleId === null) {
-			const toRestore = this.disabledActions;
-			this.disabledActions = [];
-			this.restoreActionsIdleId = GLib.idle_add(
-				GLib.PRIORITY_DEFAULT_IDLE,
-				() => {
-					this.restoreActionsIdleId = null;
-					for (const action of toRestore) {
-						action.enabled = true;
-					}
-					return GLib.SOURCE_REMOVE;
-				},
-			);
-		}
+		if (!wasSwipe) return Clutter.EVENT_PROPAGATE;
 
-		if (wasSwipe) {
+		if (cancelled) {
+			this.snapActiveToggles();
+		} else {
 			this.finalizeDragOffset(offset);
-			return Clutter.EVENT_STOP;
 		}
-		return Clutter.EVENT_PROPAGATE;
+		return Clutter.EVENT_STOP;
+	}
+
+	private cancelDrag(): void {
+		const wasSwipe = this.swipeActive;
+		this.clearPressState();
+		this.scheduleRestoreDisabledActions();
+		if (wasSwipe) {
+			this.snapActiveToggles();
+		}
 	}
 }
