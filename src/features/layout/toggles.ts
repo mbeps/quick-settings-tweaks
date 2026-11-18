@@ -96,19 +96,14 @@ function getPaginatedLayoutClass(
 					forWidth,
 				);
 				if (!this._feature) return [minH, natH];
-				return this._feature.adjustPreferredHeight(
-					this,
-					container,
-					minH,
-					natH,
-				);
+				return this._feature.adjustPreferredHeight(this, container, minH, natH);
 			}
 
 			override vfunc_allocate(
 				container: Clutter.Actor,
 				box: Clutter.ActorBox,
 			): void {
-				if (!this._feature || !this._feature.shouldPaginateAllocate()) {
+				if (!this._feature?.shouldPaginateAllocate()) {
 					this._feature?.onUnpaginatedAllocate();
 					super.vfunc_allocate(container, box);
 					return;
@@ -117,7 +112,8 @@ function getPaginatedLayoutClass(
 			}
 		},
 	);
-	cachedPaginatedLayoutClass = SubClass as unknown as PaginatedLayoutConstructor;
+	cachedPaginatedLayoutClass =
+		SubClass as unknown as PaginatedLayoutConstructor;
 	return cachedPaginatedLayoutClass;
 }
 
@@ -713,8 +709,7 @@ export class TogglesLayoutFeature extends FeatureBase {
 		const childWidth = Math.floor(availWidth / layout.nColumns);
 		const isRtl = container.get_text_direction() === Clutter.TextDirection.RTL;
 		const activeToggleRows = rows.filter((row) => this.toggleRows.has(row));
-		const lastToggleRow =
-			activeToggleRows[activeToggleRows.length - 1] ?? null;
+		const lastToggleRow = activeToggleRows[activeToggleRows.length - 1] ?? null;
 		const standardRowH = this.getStandardRowHeight(layout, activeToggleRows);
 		const rowsPerPage = this.maxPerPage / 2;
 
@@ -747,8 +742,8 @@ export class TogglesLayoutFeature extends FeatureBase {
 
 			const hasOpenSubmenu = row.some(
 				(c) =>
-					(c as Clutter.Actor & { menu?: { actor: Clutter.Actor } }).menu
-						?.actor.visible,
+					(c as Clutter.Actor & { menu?: { actor: Clutter.Actor } }).menu?.actor
+						.visible,
 			);
 			const rowBottom = y + rowNat + (hasOpenSubmenu ? overlayHeight : 0);
 
@@ -789,7 +784,7 @@ export class TogglesLayoutFeature extends FeatureBase {
 		toggleY2: number,
 		barY: number,
 	): void {
-		if (!this.paginationBar || !this.paginationBar.visible) return;
+		if (!this.paginationBar?.visible) return;
 		const [, barNatW] = this.paginationBar.get_preferred_width(-1);
 		const [, barNatH] = this.paginationBar.get_preferred_height(-1);
 
@@ -810,7 +805,9 @@ export class TogglesLayoutFeature extends FeatureBase {
 			isRtl ? St.Side.LEFT : St.Side.RIGHT,
 		);
 		const gutterOffset = Math.max(2, (boxPadding - barNatW) / 2);
-		const barX = isRtl ? box.x1 - barNatW - gutterOffset : box.x2 + gutterOffset;
+		const barX = isRtl
+			? box.x1 - barNatW - gutterOffset
+			: box.x2 + gutterOffset;
 		const centeredY =
 			toggleY1 + Math.max(0, (toggleY2 - toggleY1 - barNatH) / 2);
 		this.paginationBar.allocate(
@@ -992,9 +989,7 @@ export class TogglesLayoutFeature extends FeatureBase {
 	private isPointInToggleRegion(x: number, y: number): boolean {
 		const bounds = this.getToggleRegionStageBounds();
 		if (!bounds) return false;
-		return (
-			x >= bounds.x1 && x <= bounds.x2 && y >= bounds.y1 && y <= bounds.y2
-		);
+		return x >= bounds.x1 && x <= bounds.x2 && y >= bounds.y1 && y <= bounds.y2;
 	}
 
 	private hasBlockedAncestor(x: number, y: number): boolean {
@@ -1029,7 +1024,10 @@ export class TogglesLayoutFeature extends FeatureBase {
 		return null;
 	}
 
-	private onCapturedEvent(_actor: Clutter.Actor, event: Clutter.Event): boolean {
+	private onCapturedEvent(
+		_actor: Clutter.Actor,
+		event: Clutter.Event,
+	): boolean {
 		if (this.pages.length <= 1) return Clutter.EVENT_PROPAGATE;
 		const activeMenu = (Global.QuickSettingsMenu as unknown as ActiveMenuHost)
 			._activeMenu;

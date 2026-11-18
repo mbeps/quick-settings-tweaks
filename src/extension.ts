@@ -11,7 +11,7 @@ import { SystemIndicatorLayoutFeature } from "./features/layout/systemIndicator.
 import { SystemItemsLayoutFeature } from "./features/layout/systemItems.js";
 import { TogglesLayoutFeature } from "./features/layout/toggles.js";
 import { MenuAnimation } from "./features/menuAnimation.js";
-import { OverlayMenu } from "./features/overlayMenu.js";
+import { SubmenuModeFeature } from "./features/submenuMode.js";
 import { MediaWidgetFeature } from "./features/widget/media.js";
 import { VolumeMixerWidgetFeature } from "./features/widget/volumeMixer.js";
 import Global from "./global.js";
@@ -64,7 +64,7 @@ export default class QstExtension extends Extension {
 			// new InputOutputFeature(),
 			new MediaWidgetFeature(),
 			new VolumeMixerWidgetFeature(),
-			new OverlayMenu(),
+			new SubmenuModeFeature(),
 			new MenuAnimation(),
 			new SystemItemsLayoutFeature(),
 			new TogglesLayoutFeature(),

@@ -1,0 +1,26 @@
+@use "../global.scss" as *;
+
+#{$p}-page-menu {
+	background-color: transparent;
+	border: none;
+	box-shadow: none;
+	border-radius: 0;
+	margin: 0;
+	padding: 0;
+}
+
+#{$p}-page-header-row {
+	spacing: 8px;
+	padding-bottom: 12px;
+
+	.header {
+		padding-bottom: 0;
+	}
+}
+
+#{$p}-page-back-button {
+	border-radius: 99px;
+	min-width: 32px;
+	min-height: 32px;
+	padding: 6px;
+}

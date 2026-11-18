@@ -134,74 +134,94 @@ export const MenuPage = GObject.registerClass(
 			});
 			fixPageScrollIssue(this);
 
-			// Overlay
-			Group(
+			// Submenu Mode
+			const overlayRows = [
+				AdjustmentRow({
+					settings,
+					title: _("Overlay Width"),
+					subtitle: _(
+						"Adjust overlay menu width\nSet this to 0 to disable adjusting",
+					),
+					bind: "overlay-menu-width",
+					max: 2048,
+				}),
+				AdjustmentRow({
+					settings,
+					title: _("Overlay Animation Duration"),
+					subtitle: _(
+						"Custom menu open animation duration in microseconds\nSet this to 0 to disable custom animation",
+					),
+					bind: "overlay-menu-animate-duration",
+					max: 4000,
+				}),
+				DropdownRow({
+					settings,
+					title: _("Overlay Animation Style"),
+					subtitle: _("Custom menu open animation style"),
+					items: [
+						{ name: _("Flyout"), value: "flyout" },
+						{ name: _("Dialog"), value: "dialog" },
+					],
+					bind: "overlay-menu-animate-style",
+				}),
+				DropdownRow({
+					settings,
+					title: _("Overlay overflow anchor"),
+					subtitle: _(
+						"When the menu box is taller than Quick Settings, determines where in Quick Settings the menu box will be fixed",
+					),
+					items: [
+						{ name: _("Top"), value: "top" },
+						{ name: _("Center"), value: "center" },
+						{ name: _("Bottom"), value: "bottom" },
+					],
+					bind: "overlay-menu-overflow-anchor",
+				}),
+			];
+
+			const pageDurationRow = AdjustmentRow({
+				settings,
+				title: _("Page Animation Duration"),
+				subtitle: _(
+					"Slide transition duration in milliseconds\nSet this to 0 to disable transition animation",
+				),
+				bind: "page-menu-animate-duration",
+				max: 2000,
+			});
+
+			const submenuGroup = Group(
 				{
 					parent: this,
-					title: _("Overlay Mode"),
-					description: _("Display toggle, power, and sound menus as overlay"),
-					headerSuffix: SwitchRow({
-						settings,
-						bind: "overlay-menu-enabled",
-					}),
+					title: _("Submenu"),
+					description: _(
+						"Customize how toggle, power, and sound submenus are presented",
+					),
 					experimental: true,
 				},
 				[
-					AdjustmentRow({
-						settings,
-						title: _("Overlay Width"),
-						subtitle: _(
-							"Adjust overlay menu width\nSet this to 0 to disable adjusting",
-						),
-						sensitiveBind: "overlay-menu-enabled",
-						bind: "overlay-menu-width",
-						max: 2048,
-					}),
-					AdjustmentRow({
-						settings,
-						title: _("Overlay Animation Duration"),
-						subtitle: _(
-							"Custom menu open animation duration in microseconds\nSet this to 0 to disable custom animation",
-						),
-						sensitiveBind: "overlay-menu-enabled",
-						bind: "overlay-menu-animate-duration",
-						max: 4000,
-					}),
 					DropdownRow({
 						settings,
-						title: _("Overlay Animation Style"),
-						subtitle: _("Custom menu open animation style"),
+						title: _("Submenu Mode"),
+						subtitle: _("Choose how Quick Settings submenus open"),
 						items: [
-							{ name: _("Flyout"), value: "flyout" },
-							{ name: _("Dialog"), value: "dialog" },
+							{ name: _("Default"), value: "default" },
+							{ name: _("Overlay"), value: "overlay" },
+							{ name: _("Page"), value: "page" },
 						],
-						bind: "overlay-menu-animate-style",
-						sensitiveBind: "overlay-menu-enabled",
+						bind: "submenu-mode",
 					}),
-					DropdownRow({
-						settings,
-						title: _("Overlay overflow anchor"),
-						subtitle: _(
-							"When the menu box is taller than Quick Settings, determines where in Quick Settings the menu box will be fixed",
-						),
-						items: [
-							{ name: _("Top"), value: "top" },
-							{ name: _("Center"), value: "center" },
-							{ name: _("Bottom"), value: "bottom" },
-						],
-						bind: "overlay-menu-overflow-anchor",
-						sensitiveBind: "overlay-menu-enabled",
-					}),
+					...overlayRows,
+					pageDurationRow,
 				],
 			);
 
 			// Animation
-			Group(
+			const animationGroup = Group(
 				{
 					parent: this,
 					title: _("Animation"),
 					description: _(
-						"Add menu animation on toggle menu opening and closing\nTo get the best feel, turn on overlay mode",
+						"Add menu animation on toggle menu opening and closing (Default / Overlay modes)\nTo get the best feel, turn on overlay mode",
 					),
 					headerSuffix: SwitchRow({
 						settings,
@@ -221,6 +241,21 @@ export const MenuPage = GObject.registerClass(
 					}),
 				],
 			);
+
+			const updateModeVisibility = () => {
+				const mode = settings.get_string("submenu-mode");
+				for (const row of overlayRows) row.visible = mode === "overlay";
+				pageDurationRow.visible = mode === "page";
+				animationGroup.sensitive = mode !== "page";
+			};
+			const submenuModeConn = settings.connect(
+				"changed::submenu-mode",
+				updateModeVisibility,
+			);
+			updateModeVisibility();
+			submenuGroup.connect("destroy", () => {
+				settings.disconnect(submenuModeConn);
+			});
 		}
 	},
 );

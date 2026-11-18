@@ -381,10 +381,21 @@
     </key>
     <!-- #endregion Menu Animation -->
 
-    <!-- #region Overlay Menu -->
-    <key name="overlay-menu-enabled" type="b">
-      <default>false</default>
+    <!-- #region Submenu Mode -->
+    <key name="submenu-mode" type="s">
+      <choices>
+        <choice value='default'/>
+        <choice value='overlay'/>
+        <choice value='page'/>
+      </choices>
+      <default>'default'</default>
     </key>
+    <key name="page-menu-animate-duration" type="i">
+      <default>220</default>
+    </key>
+    <!-- #endregion Submenu Mode -->
+
+    <!-- #region Overlay Menu -->
     <key name="overlay-menu-width" type="i">
       <default>380</default>
     </key>
