@@ -1,8 +1,36 @@
 import Clutter from "gi://Clutter";
 import Cogl from "gi://Cogl";
 import GObject from "gi://GObject";
+import Shell from "gi://Shell";
 import Config from "../../config.js";
 import Global from "../../global.js";
+
+type ShellGLSLEffect = Clutter.ShaderEffect & {
+	add_glsl_snippet(
+		hook: Cogl.SnippetHook,
+		declarations: string,
+		code: string,
+		is_replace: boolean,
+	): void;
+	get_uniform_location(name: string): number;
+	set_uniform_float(
+		location: number,
+		n_components: number,
+		value: number[],
+	): void;
+};
+
+type Clutter51ShaderEffect = Clutter.ShaderEffect & {
+	set_uniform_float(name: string, n_components: number, value: number[]): void;
+};
+
+const ShellLegacy = Shell as typeof Shell & {
+	GLSLEffect?: typeof Clutter.ShaderEffect;
+};
+const HasShellGLSLEffect = Boolean(ShellLegacy.GLSLEffect);
+const EffectBase =
+	ShellLegacy.GLSLEffect ??
+	(Clutter.ShaderEffect as typeof Clutter.ShaderEffect);
 
 // #region RoundClipEffect
 /**
@@ -10,16 +38,8 @@ import Global from "../../global.js";
  * Uses the `media/rounded_corners.frag` fragment shader to render smooth anti-aliased corners
  * that `St.Widget` CSS `border-radius` cannot clip for child textures such as album art.
  */
-export class RoundClipEffect extends Clutter.ShaderEffect {
-	/**
-	 * Loads and returns the fragment shader snippet for rounded corner clipping.
-	 *
-	 * @returns Cogl fragment snippet loaded from `media/rounded_corners.frag`
-	 */
-	vfunc_get_static_snippet(): Cogl.Snippet {
-		const [declarations, code] = Global.GetShader("media/rounded_corners.frag");
-		return Cogl.Snippet.new(Cogl.SnippetHook.FRAGMENT, declarations, code);
-	}
+export class RoundClipEffect extends EffectBase {
+	private _uniformLocations?: Record<string, number>;
 
 	/**
 	 * Resets the pipeline blend mode to default alpha blending before painting the target.
@@ -36,15 +56,23 @@ export class RoundClipEffect extends Clutter.ShaderEffect {
 	}
 
 	private _setUniformFloat(name: string, value: number | number[]) {
-		const gvalue = new GObject.Value();
-		if (Array.isArray(value)) {
-			gvalue.init(Clutter.ShaderFloat.$gtype);
-			Clutter.value_set_shader_float(gvalue, value);
-		} else {
-			gvalue.init(GObject.TYPE_FLOAT);
-			gvalue.set_float(value);
+		const floats = Array.isArray(value) ? value : [value];
+		if (HasShellGLSLEffect) {
+			const legacy = this as unknown as ShellGLSLEffect;
+			this._uniformLocations ??= {};
+			let location = this._uniformLocations[name];
+			if (location === undefined) {
+				location = legacy.get_uniform_location(name);
+				this._uniformLocations[name] = location;
+			}
+			legacy.set_uniform_float(location, floats.length, floats);
+			return;
 		}
-		this.set_uniform_value(name, gvalue);
+		(this as unknown as Clutter51ShaderEffect).set_uniform_float(
+			name,
+			floats.length,
+			floats,
+		);
 	}
 
 	/**
@@ -71,6 +99,14 @@ export class RoundClipEffect extends Clutter.ShaderEffect {
 		},
 		pixel_step?: [number, number],
 	) {
+		if (!pixel_step) {
+			const actor = this.actor;
+			const width = actor?.get_width() ?? 0;
+			const height = actor?.get_height() ?? 0;
+			if (width <= 0 || height <= 0) return;
+			pixel_step = [1 / width, 1 / height];
+		}
+
 		const border_width = (border?.width ?? 0) * scale_factor;
 		const border_color = border?.color ?? [0, 0, 0, 0];
 
@@ -96,15 +132,13 @@ export class RoundClipEffect extends Clutter.ShaderEffect {
 			inner_radius = 0.0;
 		}
 
-		if (!pixel_step) {
-			const actor = this.actor;
-			pixel_step = [1 / actor.get_width(), 1 / actor.get_height()];
-		}
-
 		// Setup with squircle shape
 		let exponent = smoothing * 10.0 + 2.0;
 		let radius = outer_radius * 0.5 * exponent;
-		const max_radius = Math.min(bounds[2] - bounds[0], bounds[3] - bounds[1]);
+		const max_radius = Math.max(
+			0,
+			Math.min(bounds[2] - bounds[0], bounds[3] - bounds[1]),
+		);
 		if (radius > max_radius) {
 			exponent *= max_radius / radius;
 			radius = max_radius;
@@ -122,6 +156,35 @@ export class RoundClipEffect extends Clutter.ShaderEffect {
 		this._setUniformFloat("inner_clip_radius", inner_radius);
 		this.queue_repaint();
 	}
+}
+// Attach only the active GNOME version's shader hook before GObject registration
+if (HasShellGLSLEffect) {
+	Object.defineProperty(RoundClipEffect.prototype, "vfunc_build_pipeline", {
+		value: function (this: ShellGLSLEffect) {
+			const [declarations, code] = Global.GetShader(
+				"media/rounded_corners.frag",
+			);
+			this.add_glsl_snippet(
+				Cogl.SnippetHook.FRAGMENT,
+				declarations,
+				code,
+				false,
+			);
+		},
+		configurable: true,
+		writable: true,
+	});
+} else {
+	Object.defineProperty(RoundClipEffect.prototype, "vfunc_get_static_snippet", {
+		value: () => {
+			const [declarations, code] = Global.GetShader(
+				"media/rounded_corners.frag",
+			);
+			return Cogl.Snippet.new(Cogl.SnippetHook.FRAGMENT, declarations, code);
+		},
+		configurable: true,
+		writable: true,
+	});
 }
 GObject.registerClass(
 	{ GTypeName: `${Config.baseGTypeName}RoundClipEffect` },

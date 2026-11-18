@@ -42,22 +42,24 @@ class Player extends GObject.Object {
 		this._busName = busName;
 		this.source = new MessageList.Source();
 
-		const dbusProxyNew = Gio.DBusProxy.new as unknown as (
-			connection: Gio.DBusConnection,
-			flags: Gio.DBusProxyFlags,
-			info: Gio.DBusInterfaceInfo | null,
-			name: string | null,
-			object_path: string,
-			interface_name: string,
-			cancellable: Gio.Cancellable | null,
-		) => Promise<Gio.DBusProxy>;
+		const DBusProxyPromisified = Gio.DBusProxy as unknown as {
+			readonly new: (
+				connection: Gio.DBusConnection,
+				flags: Gio.DBusProxyFlags,
+				info: Gio.DBusInterfaceInfo | null,
+				name: string | null,
+				object_path: string,
+				interface_name: string,
+				cancellable: Gio.Cancellable | null,
+			) => Promise<Gio.DBusProxy>;
+		};
 
 		// Create properties proxy for Position
 		const propertiesIface = Global.GetDbusInterface(
 			"media/dbus.xml",
 			"org.freedesktop.DBus.Properties",
 		);
-		const propertiesPromise = dbusProxyNew(
+		const propertiesPromise = DBusProxyPromisified.new(
 			Gio.DBus.session,
 			Gio.DBusProxyFlags.NONE,
 			propertiesIface,
@@ -74,7 +76,7 @@ class Player extends GObject.Object {
 			"media/dbus.xml",
 			"org.mpris.MediaPlayer2.Player",
 		);
-		const playerPromise = dbusProxyNew(
+		const playerPromise = DBusProxyPromisified.new(
 			Gio.DBus.session,
 			Gio.DBusProxyFlags.NONE,
 			playerIface,
@@ -91,7 +93,7 @@ class Player extends GObject.Object {
 			"media/dbus.xml",
 			"org.mpris.MediaPlayer2",
 		);
-		const mprisPromise = dbusProxyNew(
+		const mprisPromise = DBusProxyPromisified.new(
 			Gio.DBus.session,
 			Gio.DBusProxyFlags.NONE,
 			mprisIface,
@@ -629,9 +631,13 @@ class MediaItem extends MessageList.Message {
 		super(player.source);
 		this.add_style_class_name("media-message");
 
+		// Disable inherited St.Button Clutter.ClickGesture (GNOME 49+) without detaching it
+		for (const action of this.get_actions()) {
+			action.enabled = false;
+		}
+
 		this._options = options;
 		this._player = player;
-		this.addEventStop((this as unknown as { _header: St.BoxLayout })._header);
 
 		// Create controls
 		if (options.progressEnabled) {
@@ -649,23 +655,19 @@ class MediaItem extends MessageList.Message {
 	_createControlButtons() {
 		const options = this._options;
 		if (options.showPrevButton)
-			this._prevButton ??= this.addEventStop(
-				this.addMediaControl("media-skip-backward-symbolic", () =>
-					this._player.previous(),
-				) as unknown as St.Button,
-			);
+			this._prevButton ??= this.addMediaControl(
+				"media-skip-backward-symbolic",
+				() => this._player.previous(),
+			) as unknown as St.Button;
 		if (options.showPauseButton)
-			this._pauseButton ??= this.addEventStop(
-				this.addMediaControl("", () =>
-					this._player.playPause(),
-				) as unknown as St.Button,
-			);
+			this._pauseButton ??= this.addMediaControl("", () =>
+				this._player.playPause(),
+			) as unknown as St.Button;
 		if (options.showNextButton)
-			this._nextButton ??= this.addEventStop(
-				this.addMediaControl("media-skip-forward-symbolic", () =>
-					this._player.next(),
-				) as unknown as St.Button,
-			);
+			this._nextButton ??= this.addMediaControl(
+				"media-skip-forward-symbolic",
+				() => this._player.next(),
+			) as unknown as St.Button;
 		const opacity = options.contorlOpacity;
 		if (this._nextButton) this._nextButton.opacity = opacity;
 		if (this._prevButton) this._prevButton.opacity = opacity;
@@ -802,12 +804,6 @@ class MediaItem extends MessageList.Message {
 	}
 	vfunc_touch_event(_event: Clutter.Event): boolean {
 		return Clutter.EVENT_PROPAGATE;
-	}
-
-	addEventStop<T extends Clutter.Actor>(actor: T): T {
-		actor.connect("button-press-event", () => Clutter.EVENT_STOP);
-		actor.connect("button-release-event", () => Clutter.EVENT_STOP);
-		return actor;
 	}
 }
 GObject.registerClass(
@@ -995,6 +991,26 @@ class MediaList extends St.BoxLayout {
 		}
 		this._seekPage(direction);
 		this._dragTranslation = null;
+	}
+	dfunc_should_drag(event: Clutter.Event): boolean {
+		const [x, y] = event.get_coords();
+		const target = global.stage.get_actor_at_pos(
+			Clutter.PickMode.REACTIVE,
+			x,
+			y,
+		);
+		if (!target) return true;
+		for (
+			let actor: Clutter.Actor | null = target;
+			actor && actor !== this;
+			actor = actor.get_parent()
+		) {
+			if (actor instanceof MediaItem) break;
+			if (actor instanceof St.Button || actor instanceof Slider) {
+				return false;
+			}
+		}
+		return true;
 	}
 	dfunc_drag_end(event: Drag.Event): void {
 		this._drag = false;

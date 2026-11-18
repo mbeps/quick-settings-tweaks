@@ -16,6 +16,8 @@ export abstract class Drag extends St.Bin {
 	_grab: Clutter.Grab;
 	_grabbedDevice: Clutter.InputDevice;
 	_grabbedSequence: Clutter.EventSequence;
+	/** Optional predicate invoked before starting a drag; returning `false` propagates the event. */
+	dfunc_should_drag?: (event: Clutter.Event) => boolean;
 	/** Optional callback invoked when a drag gesture ends. */
 	dfunc_drag_end: (event: Drag.Event) => void;
 	/** Optional callback invoked when a drag gesture starts. */
@@ -25,6 +27,9 @@ export abstract class Drag extends St.Bin {
 
 	_dragStart(event: Clutter.Event): boolean {
 		if (this._dragging) return Clutter.EVENT_PROPAGATE;
+		if (this.dfunc_should_drag && !this.dfunc_should_drag(event)) {
+			return Clutter.EVENT_PROPAGATE;
+		}
 		this._dragging = true;
 		this._dragIsClick = true;
 		this._dragStartCoords = event.get_coords();
