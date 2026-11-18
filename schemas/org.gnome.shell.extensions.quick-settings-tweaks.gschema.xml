@@ -327,6 +327,28 @@
 }]
       ]]></description>
     </key>
+    <key name="toggles-pagination-enabled" type="b">
+      <default>false</default>
+    </key>
+    <key name="toggles-pagination-max-per-page" type="i">
+      <default>6</default>
+    </key>
+    <key name="toggles-pagination-orientation" type="s">
+      <default>'vertical'</default>
+      <choices>
+        <choice value='vertical'/>
+        <choice value='horizontal'/>
+      </choices>
+    </key>
+    <key name="toggles-pagination-show-page-buttons" type="b">
+      <default>false</default>
+    </key>
+    <key name="toggles-pagination-wrap-around" type="b">
+      <default>false</default>
+    </key>
+    <key name="toggles-pagination-smooth-scroll-speed" type="i">
+      <default>16</default>
+    </key>
     <!-- #endregion Quick Toggle Layout -->
 
     <!-- #region Menu Animation -->
