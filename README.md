@@ -90,3 +90,5 @@ bash install.sh log
 - [GJS Documentation](https://gjs.guide/guides/) 
 - [Libadwaita Documentation](https://gnome.pages.gitlab.gnome.org/libadwaita-docs/) 
 - [GNOME Shell Source](https://gitlab.gnome.org/GNOME/gnome-shell)
+- [jstockdale/Quick Settings Tweaker](https://github.com/jstockdale/quick-settings-tweaks)
+- [qwreey/Quick Settings Tweaker](https://github.com/qwreey/quick-settings-tweaks) 
